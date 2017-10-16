@@ -56,6 +56,7 @@
     "falafel": "^2.1.0",
     "js-to-builder": "^0.1.0",
     "lodash": "^4.17.4",
+    "mkdirp": "^0.5.1",
     "require-glob": "^3.2.0",
     "sane": "^2.2.0"
   }

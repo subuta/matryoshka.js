@@ -11,30 +11,39 @@ const GENERATOR_DIR = path.resolve(__dirname, 'generators')
 const DEST_DIR = path.resolve(__dirname, 'webapp')
 
 const callModule = (modules, parentFilePath) => {
-  const promises = _.flattenDeep(_.map(modules, (value, key) => {
+  const promises = _.flattenDeep(_.map(modules, async (value, key) => {
     const filePath = parentFilePath ? `${parentFilePath}/${key}` : key
     const isModule = _.isPlainObject(value) && !_.isEmpty(value)
     // call children if module has children.
     if (isModule) return callModule(value, filePath)
 
-    let data = ''
-    if (_.isFunction(value)) {
-      data = value()
-    } else {
-      data = value
+    const fileName = path.join(DEST_DIR, `${filePath}.js`)
+
+    // Shared context of generator Function.
+    const ctx = {
+      filePath: path.dirname(fileName),
+      fileName: path.basename(fileName),
+      moduleName: path.basename(fileName, '.js'),
+      fs
     }
 
-    console.log(`trying to generate ${filePath}.js`);
-    console.log('data =', data);
-    return fs.writeFile(path.join(DEST_DIR, `${filePath}.js`), data)
+    if (_.isFunction(value)) {
+      return await value(ctx)
+    }
+
+    return fs.writeFile(path.join(DEST_DIR, `${filePath}.js`), value)
   }))
   return Promise.all(promises)
 }
 
-const callGenerators = () => {
+const callGenerators = async () => {
+  // TODO: virtual-dom的な、ファイルシステムレベルでの差分を判定して削除・追加・更新する機能
+  // 現状は全削除して、全追加のみとする。
+  // clear previously generated files.
+  await fs.remove('webapp/**/*.js')
   requireGlob(['generators/**/*.js']).then((modules) => {
     callModule(modules).then(() => {
-      console.log('done generating files, at', new Date());
+      console.log('done generating files, at', new Date())
     })
   })
 }
@@ -43,10 +52,10 @@ callGenerators()
 
 watcher.on('change', function (filepath, root, stat) {
   // delete cache of changed module.
-  // FIXME: https://stackoverflow.com/questions/42376161/is-it-possible-to-get-a-different-scope-for-a-required-file/42377173#42377173
+  // FIXME: performance issue? https://stackoverflow.com/questions/42376161/is-it-possible-to-get-a-different-scope-for-a-required-file/42377173#42377173
   delete require.cache[path.resolve(GENERATOR_DIR, filepath)]
   console.log('file changed', filepath)
   _.delay(() => {
     callGenerators()
-  });
+  })
 })

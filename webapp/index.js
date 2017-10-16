@@ -1,7 +1,10 @@
-// Mon Oct 16 2017 21:22:05 GMT+0900 (JST)
-b.variableDeclaration('const', [
-  b.variableDeclarator(
-    b.identifier('hoge'),
-    b.literal('fuga')
-  )
-]);
+import * as types from "ast-types";
+
+const {
+    namedTypes: n,
+    builders: b
+} = types;
+
+const hoge = "fuga";
+const fuga = "piyo";
+const piyo = "hoge";

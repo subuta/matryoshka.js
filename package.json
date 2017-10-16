@@ -52,6 +52,7 @@
     "watchify": "^3.9.0"
   },
   "dependencies": {
+    "ast-types": "^0.9.14",
     "falafel": "^2.1.0",
     "js-to-builder": "^0.1.0",
     "lodash": "^4.17.4",

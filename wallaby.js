@@ -1,31 +1,21 @@
-const wallabify = require('wallabify')
+const babel = require('babel-core');
 const path = require('path')
-
-const wallabyPostprocessor = wallabify(
-  {
-    // browserify options, such as
-    // insertGlobals: false
-  }
-  // you may also pass an initializer function to chain other
-  // browserify options, such as transformers
-  // , b => b.exclude('mkdirp').transform(require('babelify'))
-)
 
 module.exports = function (wallaby) {
   return {
     files: [
-      {pattern: 'lib/**/*.js', load: false},
-      {pattern: 'test/helper.js', load: false}
+      'lib/**/*.js',
+      'test/fixtures/**/*.js',
+      'test/helper.js'
     ],
 
     tests: [
-      {pattern: 'test/**/*.test.js', load: false}
+      'test/**/*.test.js'
     ],
 
-    testFramework: 'mocha',
-
     env: {
-      kind: 'electron',
+      type: 'node',
+      runner: 'node',
       params: {
         env: 'NODE_ENV=test;NODE_PATH=' + path.join(wallaby.projectCacheDir, '../')
       }
@@ -33,28 +23,21 @@ module.exports = function (wallaby) {
 
     compilers: {
       '**/*.js': wallaby.compilers.babel({
+        babel,
         babelrc: true,
-        'presets': [
-          'babel-preset-power-assert'
-        ],
-        'plugins': [
+        plugins: [
           ['module-resolver',
             {
-              'root': ['./'],
-              'alias': {
-                'test': './test'
-              }
-            }
-          ]
-        ]
-      })
+              root: ['./'],
+              alias: {
+                test: './test',
+              },
+            },
+          ],
+        ],
+      }),
     },
 
-    postprocessor: wallabyPostprocessor,
-
-    setup: function () {
-      // required to trigger tests loading
-      window.__moduleBundler.loadTests()
-    }
+    testFramework: 'ava'
   }
 }

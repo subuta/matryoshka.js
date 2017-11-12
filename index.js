@@ -28,7 +28,12 @@ const callModule = (modules, parentFilePath) => {
     }
 
     if (_.isFunction(value)) {
-      return await value(ctx)
+      try {
+        return await value(ctx)
+      } catch (e) {
+        console.error('compile error', e);
+        return Promise.resolve()
+      }
     }
 
     return fs.writeFile(path.join(DEST_DIR, `${filePath}.js`), value)
@@ -41,7 +46,7 @@ const callGenerators = async () => {
   // 現状は全削除して、全追加のみとする。
   // clear previously generated files.
   await fs.remove('webapp/**/*.js')
-  requireGlob(['generators/**/*.js']).then((modules) => {
+  requireGlob(['generators/**/*.js', '!**/_*/**']).then((modules) => {
     callModule(modules).then(() => {
       console.log('done generating files, at', new Date())
     })

@@ -1,10 +1,6 @@
 /** @jsx h */
 
 import { toBuilder, print, format, h, components, shorthand } from 'js-to-builder'
-import _ from 'lodash'
-
-// import * as types from 'ast-types'
-// const {namedTypes: n, builders: b} = types
 
 // expose h to window for eval
 const {
@@ -59,25 +55,28 @@ const {
   Const,
   Let,
   Var,
+  Value,
   ArrowFn,
-  Fn,
   FnStatement,
-  FnCall,
-  Value
+  FnCall
 } = shorthand
 
-import Action from './_builders/Action'
-
-export default (ctx) => {
-  const { filePath, fileName, fs } = ctx
-
-  const data = format(print(
-    <Program>
-      <Action name="piyo"/>
-      <Action name="hoge"/>
-      <Action name="fuga"/>
-    </Program>
-  ))
-
-  return fs.writeFile(`${filePath}/${fileName}`, data)
+export default (props) => {
+  return (
+    <Const name={props.name}>
+      <ArrowFn>
+        <Identifier>str</Identifier>
+        <BlockStatement>
+          <ReturnStatement>
+            <Value>
+              {{
+                type: 'HOGE',
+                payload: 'PIYO'
+              }}
+            </Value>
+          </ReturnStatement>
+        </BlockStatement>
+      </ArrowFn>
+    </Const>
+  )
 }

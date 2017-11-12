@@ -66,6 +66,8 @@
     "backpack-core": "^0.4.3",
     "nyc": "^11.3.0",
     "power-assert": "^1.4.4",
+    "proxyquire": "^1.8.0",
+    "sinon": "^4.1.2",
     "standard": "^10.0.2"
   },
   "dependencies": {

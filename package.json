@@ -4,9 +4,8 @@
   "description": "compose itself like a matriochka",
   "main": "index.js",
   "scripts": {
-    "start": "babel-node index.js",
-    "build": "babel lib --out-dir dist",
-    "prepublish": "npm run build"
+    "watch": "backpack dev",
+    "build": "backpack build"
   },
   "repository": {
     "type": "git",
@@ -46,6 +45,7 @@
   },
   "dependencies": {
     "ast-types": "^0.9.14",
+    "backpack-core": "^0.4.3",
     "falafel": "^2.1.0",
     "js-to-builder": "^0.2.0",
     "lodash": "^4.17.4",

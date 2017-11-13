@@ -15,7 +15,8 @@ const formatTree = (str) => _.trim(str, ' \n').replace(/[ \t\f\v]/g, '')
 
 test.beforeEach((t) => {
   const dummyFs = {
-    writeFile: sandbox.spy()
+    writeFile: sandbox.spy(),
+    remove: sandbox.spy()
   }
 
   const createVfs = proxyquire(absolutePath('lib/utils/virtual-fs'), {
@@ -30,6 +31,7 @@ test.beforeEach((t) => {
   })
 
   t.context.vfs = vfs
+  t.context.createVfs = createVfs
   t.context.dummyFs = dummyFs
 })
 
@@ -97,10 +99,46 @@ test('perform should process pending task', async (t) => {
     ]
   })
 
-  t.is(formatTree(vfs.ls()), formatTree(`
+  t.is(formatTree(vfs.ls(true)), formatTree(`
   └─ sample
-     └─ hoge.js
+     └─ hoge.js: a5c2f7399d39c62475b04459f9e3ba9b
   `))
+})
+
+test('perform should not process pending task when dryRun = true', async (t) => {
+  const {dummyFs, createVfs} = t.context
+
+  const vfs = createVfs({dryRun: true})
+
+  vfs.schedule(actions.writeFile('hoge.js', `const hoge = 'fuga'`))
+
+  t.deepEqual(vfs.getState(), {
+    pending: [
+      {
+        type: actionType.WRITE_FILE,
+        payload: {
+          hash: 'ee28a0715b09a871c859c26235c155d2',
+          fileName: 'hoge.js',
+          data: `const hoge = 'fuga'`
+        }
+      }
+    ],
+    cache: []
+  })
+
+  t.is(dummyFs.writeFile.callCount, 0)
+
+  vfs.perform()
+
+  // should not writeFile using fs.
+  t.is(dummyFs.writeFile.callCount, 0)
+
+  t.deepEqual(vfs.getState(), {
+    pending: [],
+    cache: [
+      {hash: 'ee28a0715b09a871c859c26235c155d2', fileName: 'hoge.js'}
+    ]
+  })
 })
 
 test('perform should not process duplicated task', async (t) => {
@@ -188,6 +226,58 @@ test('perform should process data change for same file', async (t) => {
     pending: [],
     cache: [
       {hash: '85ba8a8c43258c84ee1cb319819733a9', fileName: 'hoge.js'}
+    ]
+  })
+})
+
+test('perform should delete extra file on second perform call', async (t) => {
+  const {vfs, dummyFs} = t.context
+
+  vfs.schedule(actions.writeFile('hoge.js', `const hoge = 'fuga'`))
+
+  t.deepEqual(vfs.getState(), {
+    pending: [
+      {
+        type: actionType.WRITE_FILE,
+        payload: {
+          hash: 'ee28a0715b09a871c859c26235c155d2',
+          fileName: 'hoge.js',
+          data: `const hoge = 'fuga'`
+        }
+      }
+    ],
+    cache: []
+  })
+
+  t.is(dummyFs.writeFile.callCount, 0)
+
+  await vfs.perform()
+
+  // should writeFile using fs.
+  t.is(dummyFs.writeFile.callCount, 1)
+  t.is(dummyFs.writeFile.calledWith('hoge.js', `const hoge = 'fuga'`), true)
+
+  t.deepEqual(vfs.getState(), {
+    pending: [],
+    cache: [
+      {hash: 'ee28a0715b09a871c859c26235c155d2', fileName: 'hoge.js'}
+    ]
+  })
+
+  vfs.schedule(actions.writeFile('fuga.js', `const hoge = 'piyo'`))
+
+  await vfs.perform()
+
+  t.is(dummyFs.writeFile.callCount, 2)
+  t.is(dummyFs.writeFile.calledWith('fuga.js', `const hoge = 'piyo'`), true)
+
+  t.is(dummyFs.remove.callCount, 1)
+  t.is(dummyFs.remove.calledWith('hoge.js'), true)
+
+  t.deepEqual(vfs.getState(), {
+    pending: [],
+    cache: [
+      {hash: '5fb1ec611d7bff099ef0465f385e23d3', fileName: 'fuga.js'}
     ]
   })
 })

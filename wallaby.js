@@ -6,6 +6,7 @@ module.exports = function (wallaby) {
     files: [
       'lib/**/*.js',
       'test/fixtures/**/*.js',
+      'test/generators/**/*.js',
       'test/helper.js'
     ],
 
@@ -38,6 +39,10 @@ module.exports = function (wallaby) {
       }),
     },
 
-    testFramework: 'ava'
+    testFramework: 'ava',
+
+    setup: function() {
+      require("babel-register")
+    }
   }
 }

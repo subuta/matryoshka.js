@@ -6,11 +6,22 @@
   "plugins": [
     "add-module-exports",
     "transform-object-rest-spread",
-    ["transform-runtime", {
-      "helpers": false,
-      "polyfill": false,
-      "regenerator": true,
-      "moduleName": "babel-runtime"
-    }]
+    [
+      "transform-runtime",
+      {
+        "helpers": false,
+        "polyfill": false,
+        "regenerator": true,
+        "moduleName": "babel-runtime"
+      }
+    ],
+    [
+      "module-resolver",
+      {
+        "root": [
+          "./"
+        ]
+      }
+    ]
   ]
 }

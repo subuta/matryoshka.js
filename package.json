@@ -75,6 +75,7 @@
     "bluebird": "^3.5.1",
     "globby": "^6.1.0",
     "icepick": "^2.2.0",
+    "import-fresh": "^2.0.0",
     "js-to-builder": "^0.2.0",
     "lodash": "^4.17.4",
     "mkdirp": "^0.5.1",

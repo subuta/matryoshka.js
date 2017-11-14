@@ -109,7 +109,7 @@ test('perform should process pending task', async (t) => {
   })
 
   t.is(dummyFs.writeFile.callCount, 0)
-  vfs.perform()
+  await vfs.perform()
 
   // should writeFile using fs.
   t.is(dummyFs.writeFile.callCount, 1)
@@ -128,7 +128,7 @@ test('perform should process pending task', async (t) => {
   `))
 })
 
-test.only('perform should process multiple pending task', async (t) => {
+test('perform should process multiple pending task', async (t) => {
   const {vfs, dummyFs} = t.context
 
   vfs.writeFile('sample/hoge.js', `const hoge = 'fuga'`)
@@ -164,7 +164,7 @@ test.only('perform should process multiple pending task', async (t) => {
   })
 
   t.is(dummyFs.writeFile.callCount, 0)
-  vfs.perform()
+  await vfs.perform()
 
   // should writeFile using fs.
   t.is(dummyFs.writeFile.callCount, 3)
@@ -175,15 +175,26 @@ test.only('perform should process multiple pending task', async (t) => {
   t.deepEqual(vfs.getState(), {
     pending: [],
     cache: [
-      {hash: '58d4674d9c53bee8725c01efb9d5ac65', fileName: 'index.js'},
-      {hash: 'a5c2f7399d39c62475b04459f9e3ba9b', fileName: 'sample/hoge.js'},
-      {hash: '0f9943aff79890e09d337d027f2679df', fileName: 'sample/hoge2.js'}
+      {
+        fileName: 'sample/hoge.js',
+        hash: 'a5c2f7399d39c62475b04459f9e3ba9b'
+      },
+      {
+        fileName: 'index.js',
+        hash: '58d4674d9c53bee8725c01efb9d5ac65'
+      },
+      {
+        fileName: 'sample/hoge2.js',
+        hash: '0f9943aff79890e09d337d027f2679df'
+      }
     ]
   })
 
   t.is(formatTree(vfs.ls(true)), formatTree(`
-  └─ sample
-     └─ hoge.js: a5c2f7399d39c62475b04459f9e3ba9b
+  ├─index.js:58d4674d9c53bee8725c01efb9d5ac65
+  └─sample
+    ├─hoge.js:a5c2f7399d39c62475b04459f9e3ba9b
+    └─hoge2.js:0f9943aff79890e09d337d027f2679df
   `))
 })
 
@@ -210,7 +221,7 @@ test('perform should not process pending task when dryRun = true', async (t) => 
 
   t.is(dummyFs.writeFile.callCount, 0)
 
-  vfs.perform()
+  await vfs.perform()
 
   // should not writeFile using fs.
   t.is(dummyFs.writeFile.callCount, 0)

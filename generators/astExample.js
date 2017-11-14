@@ -79,5 +79,5 @@ export default (ctx) => {
   //   </Program>
   // ))
 
-  return fs.writeFile(`${filePath}/${fileName}`, 'fugaa')
+  return fs.writeFile(`${filePath}/${fileName}`, 'fuga')
 }

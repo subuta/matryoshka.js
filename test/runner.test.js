@@ -41,7 +41,10 @@ test('should run generator', async (t) => {
 
   t.is(dummyRequireGlobs.callCount, 0)
   t.is(dummyModules['test/generators/index.js'].callCount, 0)
+
   await runner.run()
+
+  t.is(dummyRequireGlobs.callCount, 1)
   t.deepEqual(dummyRequireGlobs.firstCall.args, [[path.join('test/generators', '**/*.js'), '!**/_*/**']])
   t.is(dummyModules['test/generators/index.js'].callCount, 1)
 

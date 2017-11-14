@@ -267,7 +267,8 @@ test('perform should not process duplicated task', async (t) => {
   await vfs.perform()
 
   // should writeFile using fs.
-  t.is(dummyFs.writeFile.callCount, 1)
+  t.is(dummyFs.writeFile.callCount, 2)
+  t.is(dummyFs.writeFile.calledWith('hoge.js', `const hoge = 'fuga'`), true)
   t.is(dummyFs.writeFile.calledWith('hoge.js', `const hoge = 'fuga'`), true)
 
   t.deepEqual(vfs.getState(), {
@@ -348,7 +349,8 @@ test('perform should delete extra file on second perform call', async (t) => {
 
   // should writeFile using fs.
   t.is(dummyFs.writeFile.callCount, 1)
-  t.is(dummyFs.writeFile.calledWith('hoge.js', `const hoge = 'fuga'`), true)
+  t.deepEqual(dummyFs.writeFile.firstCall.args, ['hoge.js', `const hoge = 'fuga'`])
+  t.is(dummyFs.remove.callCount, 0)
 
   t.deepEqual(vfs.getState(), {
     pending: [],
@@ -362,10 +364,30 @@ test('perform should delete extra file on second perform call', async (t) => {
   await vfs.perform()
 
   t.is(dummyFs.writeFile.callCount, 2)
-  t.is(dummyFs.writeFile.calledWith('fuga.js', `const hoge = 'piyo'`), true)
+  t.deepEqual(dummyFs.writeFile.firstCall.args, ['hoge.js', `const hoge = 'fuga'`])
+  t.deepEqual(dummyFs.writeFile.secondCall.args, ['fuga.js', `const hoge = 'piyo'`])
 
   t.is(dummyFs.remove.callCount, 1)
-  t.is(dummyFs.remove.calledWith('hoge.js'), true)
+  t.deepEqual(dummyFs.remove.firstCall.args, ['hoge.js'])
+
+  t.deepEqual(vfs.getState(), {
+    pending: [],
+    cache: [
+      {hash: '5fb1ec611d7bff099ef0465f385e23d3', fileName: 'fuga.js'}
+    ]
+  })
+
+  vfs.writeFile('fuga.js', `const hoge = 'piyo'`)
+
+  await vfs.perform()
+
+  t.is(dummyFs.writeFile.callCount, 2)
+  t.deepEqual(dummyFs.writeFile.firstCall.args, ['hoge.js', `const hoge = 'fuga'`])
+  t.deepEqual(dummyFs.writeFile.secondCall.args, ['fuga.js', `const hoge = 'piyo'`])
+
+  // should not call for fuga.js(because it's not changed while 2 to 3 time call)
+  t.is(dummyFs.remove.callCount, 1)
+  t.deepEqual(dummyFs.remove.firstCall.args, ['hoge.js'])
 
   t.deepEqual(vfs.getState(), {
     pending: [],

@@ -6,6 +6,7 @@ module.exports = function (wallaby) {
     files: [
       'lib/**/*.js',
       'test/fixtures/**/*.js',
+      'test/src/**/*.js',
       'test/generators/**/*.js',
       'test/helper.js'
     ],

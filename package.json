@@ -4,6 +4,7 @@
   "description": "compose itself like a matriochka",
   "main": "index.js",
   "scripts": {
+    "test": "nyc ava",
     "watch": "backpack dev",
     "build": "backpack build"
   },

@@ -324,7 +324,7 @@ test('perform should process data change for same file', async (t) => {
   })
 })
 
-test('perform should delete extra file on second perform call', async (t) => {
+test.serial('perform should delete extra file on second perform call', async (t) => {
   const {vfs, dummyFs} = t.context
 
   vfs.writeFile('hoge.js', `const hoge = 'fuga'`)

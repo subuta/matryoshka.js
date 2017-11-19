@@ -66,18 +66,16 @@ const {
   Value
 } = shorthand
 
-// import Action from './_builders/Action'
+import Action from './_builders/Action'
 
 export default (ctx) => {
   const { filePath, fileName, fs } = ctx
 
-  // const data = format(print(
-  //   <Program>
-  //     <Action name="piyo"/>
-  //     <Action name="hoge"/>
-  //     <Action name="fuga"/>
-  //   </Program>
-  // ))
+  const data = format(print(
+    <Program>
+      <Action name="piyo"/>
+    </Program>
+  ))
 
-  return fs.writeFile(`${filePath}/${fileName}`, 'fuga')
+  return fs.writeFile(`${filePath}/${fileName}`, data)
 }

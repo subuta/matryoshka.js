@@ -61,24 +61,22 @@ const {
   FnCall
 } = shorthand
 
-// export default (props) => {
-//   return (
-//     <Const name={props.name}>
-//       <ArrowFn>
-//         <Identifier>str</Identifier>
-//         <BlockStatement>
-//           <ReturnStatement>
-//             <Value>
-//               {{
-//                 type: 'HOGE',
-//                 payload: 'PIYO'
-//               }}
-//             </Value>
-//           </ReturnStatement>
-//         </BlockStatement>
-//       </ArrowFn>
-//     </Const>
-//   )
-// }
-
-export default 'fuga'
+export default (props) => {
+  return (
+    <Const name={props.name}>
+      <ArrowFn>
+        <Identifier>str</Identifier>
+        <BlockStatement>
+          <ReturnStatement>
+            <Value>
+              {{
+                type: 'HOGE',
+                payload: 'PIYO'
+              }}
+            </Value>
+          </ReturnStatement>
+        </BlockStatement>
+      </ArrowFn>
+    </Const>
+  )
+}

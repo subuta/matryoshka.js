@@ -396,3 +396,153 @@ test.serial('perform should delete extra file on second perform call', async (t)
     ]
   })
 })
+
+test.serial('perform should delete extra empty folder on second perform call', async (t) => {
+  const {vfs, dummyFs} = t.context
+
+  vfs.writeFile('first/hoge.js', `const hoge = 'fuga'`)
+
+  t.deepEqual(vfs.getState(), {
+    pending: [
+      {
+        type: actionType.WRITE_FILE,
+        payload: {
+          hash: 'ad847a0fe7336d14d82591d620368c28',
+          fileName: 'first/hoge.js',
+          data: `const hoge = 'fuga'`
+        }
+      }
+    ],
+    cache: []
+  })
+
+  t.is(dummyFs.writeFile.callCount, 0)
+
+  await vfs.perform()
+
+  // should writeFile using fs.
+  t.is(dummyFs.writeFile.callCount, 1)
+  t.deepEqual(dummyFs.writeFile.firstCall.args, ['first/hoge.js', `const hoge = 'fuga'`])
+  t.is(dummyFs.remove.callCount, 0)
+
+  t.deepEqual(vfs.getState(), {
+    pending: [],
+    cache: [
+      {hash: 'ad847a0fe7336d14d82591d620368c28', fileName: 'first/hoge.js'}
+    ]
+  })
+
+  vfs.writeFile('second/hoge.js', `const hoge = 'piyo'`)
+
+  await vfs.perform()
+
+  t.is(dummyFs.writeFile.callCount, 2)
+  t.deepEqual(dummyFs.writeFile.firstCall.args, ['first/hoge.js', `const hoge = 'fuga'`])
+  t.deepEqual(dummyFs.writeFile.secondCall.args, ['second/hoge.js', `const hoge = 'piyo'`])
+
+  t.is(dummyFs.remove.callCount, 2)
+  t.deepEqual(dummyFs.remove.firstCall.args, ['first/hoge.js'])
+  t.deepEqual(dummyFs.remove.secondCall.args, ['first'])
+
+  t.deepEqual(vfs.getState(), {
+    pending: [],
+    cache: [
+      {hash: '7ced903cc3f3de872b84322b1ce305b2', fileName: 'second/hoge.js'}
+    ]
+  })
+
+  vfs.writeFile('second/hoge.js', `const hoge = 'piyo'`)
+
+  await vfs.perform()
+
+  t.is(dummyFs.writeFile.callCount, 2)
+  t.deepEqual(dummyFs.writeFile.firstCall.args, ['first/hoge.js', `const hoge = 'fuga'`])
+  t.deepEqual(dummyFs.writeFile.secondCall.args, ['second/hoge.js', `const hoge = 'piyo'`])
+
+  // should not call for fuga.js(because it's not changed while 2 to 3 time call)
+  t.is(dummyFs.remove.callCount, 2)
+  t.deepEqual(dummyFs.remove.firstCall.args, ['first/hoge.js'])
+  t.deepEqual(dummyFs.remove.secondCall.args, ['first'])
+
+  t.deepEqual(vfs.getState(), {
+    pending: [],
+    cache: [
+      {hash: '7ced903cc3f3de872b84322b1ce305b2', fileName: 'second/hoge.js'}
+    ]
+  })
+})
+
+test.serial('perform should delete extra empty nested folder on second perform call', async (t) => {
+  const {vfs, dummyFs} = t.context
+
+  vfs.writeFile('first/nested/hoge.js', `const hoge = 'fuga'`)
+
+  t.deepEqual(vfs.getState(), {
+    pending: [
+      {
+        type: actionType.WRITE_FILE,
+        payload: {
+          hash: '020ba93c5874ca7e642651a8fa4fbaaf',
+          fileName: 'first/nested/hoge.js',
+          data: `const hoge = 'fuga'`
+        }
+      }
+    ],
+    cache: []
+  })
+
+  t.is(dummyFs.writeFile.callCount, 0)
+
+  await vfs.perform()
+
+  // should writeFile using fs.
+  t.is(dummyFs.writeFile.callCount, 1)
+  t.deepEqual(dummyFs.writeFile.firstCall.args, ['first/nested/hoge.js', `const hoge = 'fuga'`])
+  t.is(dummyFs.remove.callCount, 0)
+
+  t.deepEqual(vfs.getState(), {
+    pending: [],
+    cache: [
+      {hash: '020ba93c5874ca7e642651a8fa4fbaaf', fileName: 'first/nested/hoge.js'}
+    ]
+  })
+
+  vfs.writeFile('first/nested2/fuga.js', `const hoge = 'piyo'`)
+
+  await vfs.perform()
+
+  t.is(dummyFs.writeFile.callCount, 2)
+  t.deepEqual(dummyFs.writeFile.firstCall.args, ['first/nested/hoge.js', `const hoge = 'fuga'`])
+  t.deepEqual(dummyFs.writeFile.secondCall.args, ['first/nested2/fuga.js', `const hoge = 'piyo'`])
+
+  t.is(dummyFs.remove.callCount, 2)
+  t.deepEqual(dummyFs.remove.firstCall.args, ['first/nested/hoge.js'])
+  t.deepEqual(dummyFs.remove.secondCall.args, ['first/nested'])
+
+  t.deepEqual(vfs.getState(), {
+    pending: [],
+    cache: [
+      {hash: '8045a8dbcb127b4bd64ab51edec38067', fileName: 'first/nested2/fuga.js'}
+    ]
+  })
+
+  vfs.writeFile('first/nested2/fuga.js', `const hoge = 'piyo'`)
+
+  await vfs.perform()
+
+  t.is(dummyFs.writeFile.callCount, 2)
+  t.deepEqual(dummyFs.writeFile.firstCall.args, ['first/nested/hoge.js', `const hoge = 'fuga'`])
+  t.deepEqual(dummyFs.writeFile.secondCall.args, ['first/nested2/fuga.js', `const hoge = 'piyo'`])
+
+  // should not call for fuga.js(because it's not changed while 2 to 3 time call)
+  t.is(dummyFs.remove.callCount, 2)
+  t.deepEqual(dummyFs.remove.firstCall.args, ['first/nested/hoge.js'])
+  t.deepEqual(dummyFs.remove.secondCall.args, ['first/nested'])
+
+  t.deepEqual(vfs.getState(), {
+    pending: [],
+    cache: [
+      {hash: '8045a8dbcb127b4bd64ab51edec38067', fileName: 'first/nested2/fuga.js'}
+    ]
+  })
+})

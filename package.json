@@ -1,7 +1,7 @@
 {
   "name": "matryoshka.js",
   "version": "1.0.0",
-  "description": "compose itself like a matriochka",
+  "description": "compose itself like a matryoshka",
   "main": "index.js",
   "scripts": {
     "test": "nyc ava",

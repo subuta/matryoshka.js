@@ -70,12 +70,5 @@ import Action from './_builders/Action'
 
 export default (ctx) => {
   const { filePath, fileName, fs } = ctx
-
-  const data = format(print(
-    <Program>
-      <Action name="piyo"/>
-    </Program>
-  ))
-
-  return fs.writeFile(`${filePath}/${fileName}`, data)
+  return fs.writeFile(`${filePath}/${fileName}`, `console.log('generated file');`)
 }

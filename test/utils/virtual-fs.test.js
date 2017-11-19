@@ -2,6 +2,7 @@ import test from 'ava'
 import _ from 'lodash'
 import sinon from 'sinon'
 import path from 'path'
+import { isChildrenOf, calculatePathDiff, mergePaths } from 'lib/utils/virtual-fs'
 
 const sandbox = sinon.sandbox.create()
 
@@ -60,6 +61,39 @@ test('writeFile should put writeFile action as pending', async (t) => {
     ],
     cache: []
   })
+})
+
+test('isChildrenOf should detect nested directory as expected', async (t) => {
+  t.is(isChildrenOf('first/nested.js', 'first'), true)
+
+  // should also work for dir vs dir comparison.
+  t.is(isChildrenOf('first/nested', 'first'), true)
+
+  // treat as not children if same.
+  t.is(isChildrenOf('.', '.'), false)
+
+  // rename operation
+  t.is(isChildrenOf('first/nested.js', 'first/nested2'), false)
+  t.is(isChildrenOf('first/nested2.js', 'first/nested'), false)
+
+  t.is(isChildrenOf('first/nested/deepNested', 'first/nested'), true)
+  t.is(isChildrenOf('first/nested', 'first/nested/deepNested'), false)
+})
+
+test('calculatePathDiff should detect path difference', async (t) => {
+  t.is(calculatePathDiff('first/nested', 'first/nested'), '')
+  t.is(calculatePathDiff('first/nested', 'first/nested2'), 'first/nested2')
+  t.is(calculatePathDiff('first/nested2', 'first/nested'), 'first/nested')
+  t.is(calculatePathDiff('first', 'first/nested/deepNested'), 'first/nested')
+  t.is(calculatePathDiff('first/nested/deepNested', 'first'), 'first/nested')
+})
+
+test('mergePaths should merge nested paths', async (t) => {
+  t.deepEqual(mergePaths([]), [])
+  t.deepEqual(mergePaths(['first', 'first/nested/deepNested']), ['first/nested/deepNested'])
+  t.deepEqual(mergePaths(['first/nested/deepNested', 'first']), ['first/nested/deepNested'])
+  t.deepEqual(mergePaths(['first', 'another']), ['another', 'first'])
+  t.deepEqual(mergePaths(['another', 'first']), ['another', 'first'])
 })
 
 test('vfs should expose wrapped writeFile action also', async (t) => {
@@ -397,7 +431,7 @@ test.serial('perform should delete extra file on second perform call', async (t)
   })
 })
 
-test.serial('perform should delete extra empty folder on second perform call', async (t) => {
+test.serial('perform should delete extra empty directory on second perform call', async (t) => {
   const {vfs, dummyFs} = t.context
 
   vfs.writeFile('first/hoge.js', `const hoge = 'fuga'`)
@@ -472,7 +506,7 @@ test.serial('perform should delete extra empty folder on second perform call', a
   })
 })
 
-test.serial('perform should delete extra empty nested folder on second perform call', async (t) => {
+test.serial('perform should delete extra empty nested directory on second perform call', async (t) => {
   const {vfs, dummyFs} = t.context
 
   vfs.writeFile('first/nested/hoge.js', `const hoge = 'fuga'`)
@@ -543,6 +577,74 @@ test.serial('perform should delete extra empty nested folder on second perform c
     pending: [],
     cache: [
       {hash: '8045a8dbcb127b4bd64ab51edec38067', fileName: 'first/nested2/fuga.js'}
+    ]
+  })
+})
+
+test.serial('perform should delete empty nested directory even if complex operation', async (t) => {
+  const {vfs, dummyFs} = t.context
+
+  // 1st iteration
+  vfs.writeFile('first/hoge.js', `const hoge = 'piyo'`)
+  vfs.writeFile('first/nested/hoge.js', `const hoge = 'fuga'`)
+
+  t.is(dummyFs.writeFile.callCount, 0)
+
+  await vfs.perform()
+
+  // should writeFile using fs.
+  t.is(dummyFs.writeFile.callCount, 2)
+  t.deepEqual(dummyFs.writeFile.firstCall.args, ['first/hoge.js', `const hoge = 'piyo'`])
+  t.deepEqual(dummyFs.writeFile.secondCall.args, ['first/nested/hoge.js', `const hoge = 'fuga'`])
+  t.is(dummyFs.remove.callCount, 0)
+
+  t.deepEqual(vfs.getState(), {
+    pending: [],
+    cache: [
+      {hash: 'da97c3fe36319faf78c1fa58d48d44ee', fileName: 'first/hoge.js'},
+      {hash: '020ba93c5874ca7e642651a8fa4fbaaf', fileName: 'first/nested/hoge.js'}
+    ]
+  })
+
+  // 2nd iteration
+  vfs.writeFile('first/hoge.js', `const hoge = 'piyo'`)
+  vfs.writeFile('first/nested/deepNested/hoge.js', `const hoge = 'piyo'`)
+
+  await vfs.perform()
+
+  t.is(dummyFs.writeFile.callCount, 3)
+  t.deepEqual(dummyFs.writeFile.thirdCall.args, ['first/nested/deepNested/hoge.js', `const hoge = 'piyo'`])
+
+  t.is(dummyFs.remove.callCount, 1)
+  t.deepEqual(dummyFs.remove.firstCall.args, ['first/nested/hoge.js'])
+
+  t.deepEqual(vfs.getState(), {
+    pending: [],
+    cache: [
+      {hash: 'da97c3fe36319faf78c1fa58d48d44ee', fileName: 'first/hoge.js'},
+      {hash: '207e64b65c5a713a01d1571d3a0f4c64', fileName: 'first/nested/deepNested/hoge.js'}
+    ]
+  })
+
+  // 3rd iteration
+  vfs.writeFile('first/another/hoge.js', `const hoge = 'piyo'`)
+
+  await vfs.perform()
+
+  t.is(dummyFs.writeFile.callCount, 4)
+
+  t.deepEqual(dummyFs.writeFile.getCall(3).args, ['first/another/hoge.js', `const hoge = 'piyo'`])
+
+  // should not call for fuga.js(because it's not changed while 2 to 3 time call)
+  t.is(dummyFs.remove.callCount, 4)
+  t.deepEqual(dummyFs.remove.secondCall.args, ['first/hoge.js'])
+  t.deepEqual(dummyFs.remove.thirdCall.args, ['first/nested/deepNested/hoge.js'])
+  t.deepEqual(dummyFs.remove.getCall(3).args, ['first/nested'])
+
+  t.deepEqual(vfs.getState(), {
+    pending: [],
+    cache: [
+      {hash: 'd8e940c165d3464a303db9a2fd68fdac', fileName: 'first/another/hoge.js'}
     ]
   })
 })

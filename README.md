@@ -58,6 +58,8 @@ and at the end of `vfs.perform` call, we deletes unnecessary files for keep gene
 
 ```bash
 npm i
-npm start # will start filesystem watcher
+npm run watch # will start generator-watcher
+
+npm test # will run tests by AVA.
 ```
 

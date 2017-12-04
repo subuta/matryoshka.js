@@ -55,7 +55,7 @@
   },
   "homepage": "https://github.com/subuta/matryoshka.js#readme",
   "bin": {
-    "mat": "./dist/index.js"
+    "mat": "./dist/mat.js"
   },
   "devDependencies": {
     "ava": "^0.23.0",

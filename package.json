@@ -2,11 +2,12 @@
   "name": "matryoshka.js",
   "version": "0.1.0",
   "description": "Generate your file like a Matryoshka",
-  "main": "mat.js",
+  "main": "dist/main.js",
   "scripts": {
     "test": "nyc ava",
     "watch": "backpack dev",
-    "build": "backpack build"
+    "build": "backpack build",
+    "prepublish": "npm run build"
   },
   "repository": {
     "type": "git",

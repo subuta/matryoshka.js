@@ -1,6 +1,6 @@
 # Created by .ignore support plugin (hsz.mobi)
 dist/*
-!dist/index.js
+!dist/mat.js
 
 .nyc_output
 

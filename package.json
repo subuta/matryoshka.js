@@ -1,7 +1,7 @@
 {
   "name": "matryoshka.js",
   "version": "0.1.0",
-  "description": "compose itself like a matryoshka",
+  "description": "Generate your file like a Matryoshka",
   "main": "mat.js",
   "scripts": {
     "test": "nyc ava",
@@ -12,7 +12,7 @@
     "type": "git",
     "url": "git+https://github.com/subuta/matryoshka.js.git"
   },
-  "author": "",
+  "author": "subuta <shunta.3110@gmail.com>",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/subuta/matryoshka.js/issues"

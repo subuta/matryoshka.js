@@ -79,6 +79,7 @@
   "dependencies": {
     "bluebird": "^3.5.1",
     "commander": "^2.12.2",
+    "event-stream": "^3.3.4",
     "globby": "^6.1.0",
     "icepick": "^2.2.0",
     "import-fresh": "^2.0.0",

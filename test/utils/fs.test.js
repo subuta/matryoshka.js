@@ -3,11 +3,20 @@ import sinon from 'sinon'
 import mkdirp from 'mkdirp'
 import rimraf from 'rimraf'
 import globby from 'globby'
+import { Readable } from 'stream'
 
 const sandbox = sinon.sandbox.create()
 
 import { absolutePath } from 'lib/utils/path'
+
 const proxyquire = require('proxyquire').noCallThru()
+
+const createReadStreamFromString = (str) => {
+  const stream = new Readable
+  stream.push(str)
+  stream.push(null)
+  return stream
+}
 
 test.beforeEach((t) => {
 })
@@ -52,6 +61,25 @@ test('readFile should call fs.readFile', async (t) => {
   t.deepEqual(spiedFs.readFile.firstCall.args[0], 'hoge.js')
   t.deepEqual(spiedFs.readFile.firstCall.args[1], {encoding: 'utf8'})
   t.is(typeof spiedFs.readFile.firstCall.args[2], 'function')
+})
+
+test('readFileStream should call fs.readFileStream', async (t) => {
+  const spiedFs = {
+    createReadStream: sandbox.spy(() => createReadStreamFromString(`const hoge = 'fuga'`))
+  }
+
+  const fs = proxyquire(absolutePath('lib/utils/fs'), {
+    'fs': spiedFs
+  })
+
+  const result = await fs.readFileStream('hoge.js')
+
+  t.is(result, `const hoge = 'fuga'`)
+
+  t.is(spiedFs.createReadStream.callCount, 1)
+
+  t.deepEqual(spiedFs.createReadStream.firstCall.args[0], 'hoge.js')
+  t.deepEqual(spiedFs.createReadStream.firstCall.args[1], {encoding: 'utf8'})
 })
 
 test('readFile should reject with err if fs.readFile returns error', async (t) => {

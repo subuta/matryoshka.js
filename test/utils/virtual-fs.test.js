@@ -18,6 +18,7 @@ const formatTree = (str) => _.trim(str, ' \n').replace(/[ \t\f\v]/g, '')
 test.beforeEach((t) => {
   const dummyFs = {
     writeFile: sandbox.spy(),
+    updateFileByPragma: sandbox.spy(),
     remove: sandbox.spy()
   }
 
@@ -153,13 +154,13 @@ test('perform should process pending task', async (t) => {
   t.deepEqual(vfs.getState(), {
     pending: [],
     cache: [
-      {hash: 'a5c2f7399d39c62475b04459f9e3ba9b', fileName, isUpdated: true}
+      {hash: 'a5c2f7399d39c62475b04459f9e3ba9b', fileName, isNew: true}
     ]
   })
 
   t.is(formatTree(vfs.ls(true)), formatTree(`
   └─ sample
-     └─ hoge.js: [updated]a5c2f7399d39c62475b04459f9e3ba9b
+     └─ hoge.js: [new]a5c2f7399d39c62475b04459f9e3ba9b
   `))
 })
 
@@ -213,26 +214,26 @@ test('perform should process multiple pending task', async (t) => {
       {
         fileName: 'sample/hoge.js',
         hash: 'a5c2f7399d39c62475b04459f9e3ba9b',
-        isUpdated: true
+        isNew: true
       },
       {
         fileName: 'index.js',
         hash: '58d4674d9c53bee8725c01efb9d5ac65',
-        isUpdated: true
+        isNew: true
       },
       {
         fileName: 'sample/hoge2.js',
         hash: '0f9943aff79890e09d337d027f2679df',
-        isUpdated: true
+        isNew: true
       }
     ]
   })
 
   t.is(formatTree(vfs.ls(true)), formatTree(`
   ├─sample
-  │├─hoge.js:[updated]a5c2f7399d39c62475b04459f9e3ba9b
-  │└─hoge2.js:[updated]0f9943aff79890e09d337d027f2679df
-  └─index.js:[updated]58d4674d9c53bee8725c01efb9d5ac65
+  │├─hoge.js:[new]a5c2f7399d39c62475b04459f9e3ba9b
+  │└─hoge2.js:[new]0f9943aff79890e09d337d027f2679df
+  └─index.js:[new]58d4674d9c53bee8725c01efb9d5ac65
   `))
 })
 
@@ -312,7 +313,7 @@ test('perform should not process duplicated task', async (t) => {
   t.deepEqual(vfs.getState(), {
     pending: [],
     cache: [
-      {hash: 'ee28a0715b09a871c859c26235c155d2', fileName: 'hoge.js', isUpdated: true}
+      {hash: 'ee28a0715b09a871c859c26235c155d2', fileName: 'hoge.js', isNew: true}
     ]
   })
 })
@@ -357,6 +358,69 @@ test('perform should process data change for same file', async (t) => {
   t.deepEqual(vfs.getState(), {
     pending: [],
     cache: [
+      {hash: '85ba8a8c43258c84ee1cb319819733a9', fileName: 'hoge.js', isNew: true}
+    ]
+  })
+})
+
+test('perform should process file update for same file', async (t) => {
+  const {vfs, dummyFs} = t.context
+
+  vfs.writeFile('hoge.js', `const hoge = 'fuga'`)
+
+  t.deepEqual(vfs.getState(), {
+    pending: [
+      {
+        type: actionType.WRITE_FILE,
+        payload: {
+          hash: 'ee28a0715b09a871c859c26235c155d2',
+          fileName: 'hoge.js',
+          data: `const hoge = 'fuga'`
+        }
+      }
+    ],
+    cache: []
+  })
+
+  t.is(dummyFs.writeFile.callCount, 0)
+
+  await vfs.perform()
+
+  t.is(dummyFs.writeFile.callCount, 1)
+  t.is(dummyFs.writeFile.calledWith('hoge.js', `const hoge = 'fuga'`), true)
+
+  vfs.writeFile('hoge.js', `const hoge = 'piyo'`)
+
+  t.deepEqual(vfs.getState(), {
+    pending: [
+      {
+        type: actionType.WRITE_FILE,
+        payload: {
+          hash: '85ba8a8c43258c84ee1cb319819733a9',
+          fileName: 'hoge.js',
+          data: `const hoge = 'piyo'`
+        }
+      }
+    ],
+    cache: [
+      {
+        fileName: 'hoge.js',
+        hash: 'ee28a0715b09a871c859c26235c155d2',
+        isNew: true
+      }
+    ]
+  })
+
+  await vfs.perform()
+
+  // should writeFile using fs.
+  t.is(dummyFs.writeFile.callCount, 1)
+  t.is(dummyFs.updateFileByPragma.callCount, 1)
+  t.is(dummyFs.updateFileByPragma.calledWith('hoge.js', `const hoge = 'piyo'`), true)
+
+  t.deepEqual(vfs.getState(), {
+    pending: [],
+    cache: [
       {hash: '85ba8a8c43258c84ee1cb319819733a9', fileName: 'hoge.js', isUpdated: true}
     ]
   })
@@ -396,7 +460,7 @@ test.serial('perform should delete extra file on second perform call', async (t)
       {
         fileName: 'hoge.js',
         hash: 'ee28a0715b09a871c859c26235c155d2',
-        isUpdated: true
+        isNew: true
       }
     ]
   })
@@ -415,7 +479,7 @@ test.serial('perform should delete extra file on second perform call', async (t)
   t.deepEqual(vfs.getState(), {
     pending: [],
     cache: [
-      {hash: '5fb1ec611d7bff099ef0465f385e23d3', fileName: 'fuga.js', isUpdated: true}
+      {hash: '5fb1ec611d7bff099ef0465f385e23d3', fileName: 'fuga.js', isNew: true}
     ]
   })
 
@@ -470,7 +534,7 @@ test.serial('perform should delete extra empty directory on second perform call'
   t.deepEqual(vfs.getState(), {
     pending: [],
     cache: [
-      {hash: 'ad847a0fe7336d14d82591d620368c28', fileName: 'first/hoge.js', isUpdated: true}
+      {hash: 'ad847a0fe7336d14d82591d620368c28', fileName: 'first/hoge.js', isNew: true}
     ]
   })
 
@@ -489,7 +553,7 @@ test.serial('perform should delete extra empty directory on second perform call'
   t.deepEqual(vfs.getState(), {
     pending: [],
     cache: [
-      {hash: '7ced903cc3f3de872b84322b1ce305b2', fileName: 'second/hoge.js', isUpdated: true}
+      {hash: '7ced903cc3f3de872b84322b1ce305b2', fileName: 'second/hoge.js', isNew: true}
     ]
   })
 
@@ -545,7 +609,7 @@ test.serial('perform should delete extra empty nested directory on second perfor
   t.deepEqual(vfs.getState(), {
     pending: [],
     cache: [
-      {hash: '020ba93c5874ca7e642651a8fa4fbaaf', fileName: 'first/nested/hoge.js', isUpdated: true}
+      {hash: '020ba93c5874ca7e642651a8fa4fbaaf', fileName: 'first/nested/hoge.js', isNew: true}
     ]
   })
 
@@ -564,7 +628,7 @@ test.serial('perform should delete extra empty nested directory on second perfor
   t.deepEqual(vfs.getState(), {
     pending: [],
     cache: [
-      {hash: '8045a8dbcb127b4bd64ab51edec38067', fileName: 'first/nested2/fuga.js', isUpdated: true}
+      {hash: '8045a8dbcb127b4bd64ab51edec38067', fileName: 'first/nested2/fuga.js', isNew: true}
     ]
   })
 
@@ -609,8 +673,8 @@ test.serial('perform should delete empty nested directory even if complex operat
   t.deepEqual(vfs.getState(), {
     pending: [],
     cache: [
-      {hash: 'da97c3fe36319faf78c1fa58d48d44ee', fileName: 'first/hoge.js', isUpdated: true},
-      {hash: '020ba93c5874ca7e642651a8fa4fbaaf', fileName: 'first/nested/hoge.js', isUpdated: true}
+      {hash: 'da97c3fe36319faf78c1fa58d48d44ee', fileName: 'first/hoge.js', isNew: true},
+      {hash: '020ba93c5874ca7e642651a8fa4fbaaf', fileName: 'first/nested/hoge.js', isNew: true}
     ]
   })
 
@@ -630,7 +694,7 @@ test.serial('perform should delete empty nested directory even if complex operat
     pending: [],
     cache: [
       {hash: 'da97c3fe36319faf78c1fa58d48d44ee', fileName: 'first/hoge.js'},
-      {hash: '207e64b65c5a713a01d1571d3a0f4c64', fileName: 'first/nested/deepNested/hoge.js', isUpdated: true}
+      {hash: '207e64b65c5a713a01d1571d3a0f4c64', fileName: 'first/nested/deepNested/hoge.js', isNew: true}
     ]
   })
 
@@ -652,7 +716,7 @@ test.serial('perform should delete empty nested directory even if complex operat
   t.deepEqual(vfs.getState(), {
     pending: [],
     cache: [
-      {hash: 'd8e940c165d3464a303db9a2fd68fdac', fileName: 'first/another/hoge.js', isUpdated: true}
+      {hash: 'd8e940c165d3464a303db9a2fd68fdac', fileName: 'first/another/hoge.js', isNew: true}
     ]
   })
 })

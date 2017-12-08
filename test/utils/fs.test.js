@@ -6,6 +6,7 @@ import globby from 'globby'
 import { Readable, PassThrough } from 'stream'
 import es from 'event-stream'
 import _ from 'lodash'
+import os from 'os'
 
 import { ft } from 'test/helper.js'
 
@@ -67,7 +68,7 @@ test('readFile should call fs.readFile', async (t) => {
   t.is(typeof spiedFs.readFile.firstCall.args[2], 'function')
 })
 
-test.serial('updateFile should update generated file.', async (t) => {
+test.serial('updateFileByPragma should update generated file.', async (t) => {
   const dummyWriteStream = new PassThrough()
 
   const originalFile = ft`
@@ -92,7 +93,7 @@ test.serial('updateFile should update generated file.', async (t) => {
   let chunk = []
   dummyWriteStream.on('data', (line) => chunk.push(line.toString('utf-8')))
 
-  await fs.updateFile('test/fixtures/generated/small.js', data)
+  await fs.updateFileByPragma('test/fixtures/generated/small.js', data)
   const writeFileResult = chunk.join('\n')
 
   t.is(spiedFs.createReadStream.callCount, 1)

@@ -7,6 +7,7 @@ const sandbox = sinon.sandbox.create()
 
 import { absolutePath } from 'lib/utils/path'
 import fs from 'lib/utils/fs'
+import { wrapPragma } from 'lib/utils/mat'
 
 const proxyquire = require('proxyquire').noCallThru()
 
@@ -41,9 +42,9 @@ test('should run generator', async (t) => {
   const spiedRequireGlobs = sandbox.stub().returns(Promise.resolve(modules))
 
   const files = {
-    'test/src/index.js': `const hoge = 'fuga'`,
-    'test/src/nested/hoge.js': `const fuga = 'piyo'`,
-    'test/src/nested/index.js': `const piyo = 'hoge'`,
+    'test/src/index.js': wrapPragma(`const hoge = 'fuga'`),
+    'test/src/nested/hoge.js': wrapPragma(`const fuga = 'piyo'`),
+    'test/src/nested/index.js': wrapPragma(`const piyo = 'hoge'`),
   }
 
   const spiedFs = {
@@ -95,8 +96,8 @@ test('should run generator', async (t) => {
   └─test
     └─src
       ├─nested
-      │├─hoge.js:e9eb52664ebfa4faff5403bb0feb06e5
-      │└─index.js:892bebcef3a9143a362cb22ca527cdd4
-    └─index.js:4c28e8a04afe44851f64d88a359b4de1
+      │├─hoge.js:d729e5c5aae03b9420d51c9daf537431
+      │└─index.js:7b09992b96be74b09ccc354fdb097f5e
+    └─index.js:f403ce23328ab127c5b02b3db12c2be5
   `))
 })

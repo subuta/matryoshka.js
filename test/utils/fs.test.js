@@ -13,6 +13,7 @@ import { ft } from 'test/helper.js'
 const sandbox = sinon.sandbox.create()
 
 import { absolutePath } from 'lib/utils/path'
+import { wrapPragma } from '../../lib/utils/mat'
 
 const proxyquire = require('proxyquire').noCallThru()
 
@@ -68,6 +69,25 @@ test('readFile should call fs.readFile', async (t) => {
   t.is(typeof spiedFs.readFile.firstCall.args[2], 'function')
 })
 
+test('rename should call fs.rename', async (t) => {
+  const spiedFs = {
+    rename: sandbox.spy((_, __, cb) => cb(undefined, true))
+  }
+
+  const fs = proxyquire(absolutePath('lib/utils/fs'), {
+    'fs': spiedFs
+  })
+
+  const result = await fs.rename('hoge.js', 'fuga.js')
+  t.is(result, true)
+
+  t.is(spiedFs.rename.callCount, 1)
+
+  t.deepEqual(spiedFs.rename.firstCall.args[0], 'hoge.js')
+  t.deepEqual(spiedFs.rename.firstCall.args[1], 'fuga.js')
+  t.is(typeof spiedFs.rename.firstCall.args[2], 'function')
+})
+
 test.serial('updateFileByPragma should update generated file.', async (t) => {
   const dummyWriteStream = new PassThrough()
 
@@ -83,7 +103,8 @@ test.serial('updateFileByPragma should update generated file.', async (t) => {
 
   let spiedFs = {
     createReadStream: sandbox.spy(() => createReadStreamFromString(originalFile)),
-    createWriteStream: sandbox.spy(() => dummyWriteStream)
+    createWriteStream: sandbox.spy(() => dummyWriteStream),
+    rename: sandbox.spy((_, __, cb) => cb(null))
   }
 
   const fs = proxyquire(absolutePath('lib/utils/fs'), {
@@ -93,17 +114,22 @@ test.serial('updateFileByPragma should update generated file.', async (t) => {
   let chunk = []
   dummyWriteStream.on('data', (line) => chunk.push(line.toString('utf-8')))
 
-  await fs.updateFileByPragma('test/fixtures/generated/small.js', data)
+  await fs.updateFileByPragma('test/fixtures/generated/small.js', wrapPragma(data))
   const writeFileResult = chunk.join('\n')
 
   t.is(spiedFs.createReadStream.callCount, 1)
   t.is(spiedFs.createWriteStream.callCount, 1)
+  t.is(spiedFs.rename.callCount, 1)
 
   t.deepEqual(spiedFs.createReadStream.firstCall.args[0], 'test/fixtures/generated/small.js')
   t.deepEqual(spiedFs.createReadStream.firstCall.args[1], {encoding: 'utf8'})
 
-  t.deepEqual(spiedFs.createWriteStream.firstCall.args[0], 'test/fixtures/generated/small.js')
+  t.deepEqual(spiedFs.createWriteStream.firstCall.args[0], 'test/fixtures/generated/.small.js.tmp')
   t.deepEqual(spiedFs.createWriteStream.firstCall.args[1], {encoding: 'utf8'})
+
+  // then rename .tmp to originalFile.
+  t.deepEqual(spiedFs.rename.firstCall.args[0], 'test/fixtures/generated/.small.js.tmp')
+  t.deepEqual(spiedFs.rename.firstCall.args[1], 'test/fixtures/generated/small.js')
 
   const expected = ft`
     /* mat start */

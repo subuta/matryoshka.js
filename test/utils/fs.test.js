@@ -122,7 +122,7 @@ test.serial('updateFileByPragma should update generated file.', async (t) => {
   t.is(spiedFs.rename.callCount, 1)
 
   t.deepEqual(spiedFs.createReadStream.firstCall.args[0], 'test/fixtures/generated/small.js')
-  t.deepEqual(spiedFs.createReadStream.firstCall.args[1], {encoding: 'utf8'})
+  t.deepEqual(spiedFs.createReadStream.firstCall.args[1], {encoding: 'utf8', flags: 'r'})
 
   t.deepEqual(spiedFs.createWriteStream.firstCall.args[0], 'test/fixtures/generated/.small.js.tmp')
   t.deepEqual(spiedFs.createWriteStream.firstCall.args[1], {encoding: 'utf8'})

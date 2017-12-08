@@ -50,7 +50,7 @@ test('should run generator', async (t) => {
   const spiedFs = {
     listFiles: sandbox.spy(fs.listFiles),
     writeFile: sandbox.spy(),
-    readFile: sandbox.spy((file) => new Promise((resolve) => resolve(files[file]))),
+    readFileByPragma: sandbox.spy((file) => new Promise((resolve) => resolve(files[file]))),
     remove: sandbox.spy()
   }
 
@@ -95,9 +95,9 @@ test('should run generator', async (t) => {
   t.is(formatTree(runner.ls(true)), formatTree(`
   └─test
     └─src
-      ├─nested
-      │├─hoge.js:d729e5c5aae03b9420d51c9daf537431
-      │└─index.js:7b09992b96be74b09ccc354fdb097f5e
-    └─index.js:f403ce23328ab127c5b02b3db12c2be5
+      ├─index.js:f403ce23328ab127c5b02b3db12c2be5
+      └─nested
+        ├─hoge.js:d729e5c5aae03b9420d51c9daf537431
+        └─index.js:7b09992b96be74b09ccc354fdb097f5e
   `))
 })

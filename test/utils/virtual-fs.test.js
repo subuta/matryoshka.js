@@ -225,10 +225,10 @@ test('perform should process multiple pending task', async (t) => {
   })
 
   t.is(formatTree(vfs.ls(true)), formatTree(`
-  ├─index.js:58d4674d9c53bee8725c01efb9d5ac65
-  └─sample
-    ├─hoge.js:a5c2f7399d39c62475b04459f9e3ba9b
-    └─hoge2.js:0f9943aff79890e09d337d027f2679df
+  ├─sample
+  │├─hoge.js:a5c2f7399d39c62475b04459f9e3ba9b
+  │└─hoge2.js:0f9943aff79890e09d337d027f2679df
+  └─index.js:58d4674d9c53bee8725c01efb9d5ac65
   `))
 })
 

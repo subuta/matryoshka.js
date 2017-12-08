@@ -3,7 +3,7 @@ import sinon from 'sinon'
 import mkdirp from 'mkdirp'
 import rimraf from 'rimraf'
 import globby from 'globby'
-import { Readable } from 'stream'
+import { Readable, PassThrough } from 'stream'
 import es from 'event-stream'
 import _ from 'lodash'
 
@@ -14,7 +14,7 @@ import { absolutePath } from 'lib/utils/path'
 const proxyquire = require('proxyquire').noCallThru()
 
 const createReadStreamFromString = (str) => {
-  const stream = new Readable
+  const stream = new Readable()
   stream.push(str)
   stream.push(null)
   return stream
@@ -65,39 +65,54 @@ test('readFile should call fs.readFile', async (t) => {
   t.is(typeof spiedFs.readFile.firstCall.args[2], 'function')
 })
 
-// test.serial('updateFile should update generated file.', async (t) => {
-//   const rawFs = require('fs')
-//
-//   const originalFile = `
-//     /* mat start */
-//     console.log('hoge');
-//     /* mat end */
-//
-//     console.log('fuga');
-//   `
-//
-//   let spiedFs = {
-//     createReadStream: sandbox.spy(() => createReadStreamFromString(originalFile))
-//   }
-//
-//   const fs = proxyquire(absolutePath('lib/utils/fs'), {
-//     'fs': spiedFs
-//   })
-//
-//   const result = await fs.updateFile('test/fixtures/generated/small.js')
-//   console.log('result = ', result)
-//
-//   // t.is(spiedFs.open.callCount, 1)
-//   // t.is(spiedFs.fstat.callCount, 1)
-//   // t.is(spiedFs.read.callCount, 1)
-//   // t.is(spiedFs.close.callCount, 1)
-//   //
-//   // t.deepEqual(spiedFs.open.firstCall.args[0], 'test/fixtures/generated/small.js')
-//   // t.deepEqual(spiedFs.open.firstCall.args[1], 'r')
-//   //
-//   // const readFileResult = await fs.readFile('test/fixtures/generated/small.js')
-//   // t.is(result, readFileResult)
-// })
+test.serial('updateFile should update generated file.', async (t) => {
+  const rawFs = require('fs')
+
+  const dummyWriteStream = new PassThrough()
+  console.log(dummyWriteStream);
+
+  const originalFile = `
+    /* mat start */
+    console.log('hoge');
+    /* mat end */
+    
+    console.log('fuga');
+  `
+
+  const data = `
+    console.log('piyo');
+  `
+
+  let spiedFs = {
+    createReadStream: sandbox.spy(() => createReadStreamFromString(originalFile)),
+    createWriteStream: sandbox.spy(() => dummyWriteStream)
+  }
+
+  const fs = proxyquire(absolutePath('lib/utils/fs'), {
+    'fs': spiedFs
+  })
+
+  let chunk = []
+  dummyWriteStream.on('data', (line) => chunk.push(line.toString('utf-8')))
+
+  const result = await fs.updateFile('test/fixtures/generated/small.js', data)
+  const writeFileResult = chunk.join('\n')
+
+  console.log(writeFileResult);
+
+  console.log('result = ', result)
+
+  // t.is(spiedFs.open.callCount, 1)
+  // t.is(spiedFs.fstat.callCount, 1)
+  // t.is(spiedFs.read.callCount, 1)
+  // t.is(spiedFs.close.callCount, 1)
+  //
+  // t.deepEqual(spiedFs.open.firstCall.args[0], 'test/fixtures/generated/small.js')
+  // t.deepEqual(spiedFs.open.firstCall.args[1], 'r')
+  //
+  // const readFileResult = await fs.readFile('test/fixtures/generated/small.js')
+  // t.is(result, readFileResult)
+})
 
 // test('readFileStream should call fs.readFileStream', async (t) => {
 //   const file = `

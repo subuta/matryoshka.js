@@ -78,6 +78,7 @@
   },
   "dependencies": {
     "bluebird": "^3.5.1",
+    "chalk": "^2.3.0",
     "commander": "^2.12.2",
     "event-stream": "^3.3.4",
     "globby": "^6.1.0",

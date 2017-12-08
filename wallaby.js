@@ -5,10 +5,11 @@ module.exports = function (wallaby) {
   return {
     files: [
       'lib/**/*.js',
-      'test/fixtures/**/*.js',
       'test/src/**/*.js',
       'test/generators/**/*.js',
-      'test/helper.js'
+      'test/helper.js',
+      'test/fixtures/fresh.js',
+      { pattern: 'test/fixtures/generated/**/*.js', instrument: false }
     ],
 
     tests: [

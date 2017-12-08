@@ -4,6 +4,8 @@ import mkdirp from 'mkdirp'
 import rimraf from 'rimraf'
 import globby from 'globby'
 import { Readable } from 'stream'
+import es from 'event-stream'
+import _ from 'lodash'
 
 const sandbox = sinon.sandbox.create()
 
@@ -63,24 +65,75 @@ test('readFile should call fs.readFile', async (t) => {
   t.is(typeof spiedFs.readFile.firstCall.args[2], 'function')
 })
 
-test('readFileStream should call fs.readFileStream', async (t) => {
-  const spiedFs = {
-    createReadStream: sandbox.spy(() => createReadStreamFromString(`const hoge = 'fuga'`))
-  }
+// test.serial('updateFile should update generated file.', async (t) => {
+//   const rawFs = require('fs')
+//
+//   const originalFile = `
+//     /* mat start */
+//     console.log('hoge');
+//     /* mat end */
+//
+//     console.log('fuga');
+//   `
+//
+//   let spiedFs = {
+//     createReadStream: sandbox.spy(() => createReadStreamFromString(originalFile))
+//   }
+//
+//   const fs = proxyquire(absolutePath('lib/utils/fs'), {
+//     'fs': spiedFs
+//   })
+//
+//   const result = await fs.updateFile('test/fixtures/generated/small.js')
+//   console.log('result = ', result)
+//
+//   // t.is(spiedFs.open.callCount, 1)
+//   // t.is(spiedFs.fstat.callCount, 1)
+//   // t.is(spiedFs.read.callCount, 1)
+//   // t.is(spiedFs.close.callCount, 1)
+//   //
+//   // t.deepEqual(spiedFs.open.firstCall.args[0], 'test/fixtures/generated/small.js')
+//   // t.deepEqual(spiedFs.open.firstCall.args[1], 'r')
+//   //
+//   // const readFileResult = await fs.readFile('test/fixtures/generated/small.js')
+//   // t.is(result, readFileResult)
+// })
 
-  const fs = proxyquire(absolutePath('lib/utils/fs'), {
-    'fs': spiedFs
-  })
-
-  const result = await fs.readFileStream('hoge.js')
-
-  t.is(result, `const hoge = 'fuga'`)
-
-  t.is(spiedFs.createReadStream.callCount, 1)
-
-  t.deepEqual(spiedFs.createReadStream.firstCall.args[0], 'hoge.js')
-  t.deepEqual(spiedFs.createReadStream.firstCall.args[1], {encoding: 'utf8'})
-})
+// test('readFileStream should call fs.readFileStream', async (t) => {
+//   const file = `
+//     a
+//     b
+//     c
+//     d
+//     e
+//   `
+//
+//   const readStream = createReadStreamFromString(file)
+//   readStream.destroy = sandbox.spy()
+//   sandbox.spy(readStream, 'emit')
+//
+//   readStream.pipe(es.split()).on('data', (line) => {
+//     console.log(line);
+//   })
+//
+//   const spiedFs = {
+//     createReadStream: sandbox.spy(() => readStream)
+//   }
+//
+//   const fs = proxyquire(absolutePath('lib/utils/fs'), {
+//     'fs': spiedFs
+//   })
+//
+//   const result = await fs.readFileStream('hoge.js')
+//
+//   t.is(result, file)
+//
+//   t.is(spiedFs.createReadStream.callCount, 1)
+//   t.is(readStream.destroy.callCount, 1)
+//
+//   t.deepEqual(spiedFs.createReadStream.firstCall.args[0], 'hoge.js')
+//   t.deepEqual(spiedFs.createReadStream.firstCall.args[1], {encoding: 'utf8'})
+// })
 
 test('readFile should reject with err if fs.readFile returns error', async (t) => {
   const dummyError = new Error('dummy error')
@@ -100,6 +153,89 @@ test('readFile should reject with err if fs.readFile returns error', async (t) =
   t.deepEqual(spiedFs.readFile.firstCall.args[0], 'hoge.js')
   t.deepEqual(spiedFs.readFile.firstCall.args[1], {encoding: 'utf8'})
   t.is(typeof spiedFs.readFile.firstCall.args[2], 'function')
+})
+
+test.serial('seekFile should returns whole file if predicate omitted', async (t) => {
+  const rawFs = require('fs')
+
+  let spiedFs = {
+    open: sandbox.spy(rawFs.open),
+    fstat: sandbox.spy(rawFs.fstat),
+    read: sandbox.spy(rawFs.read),
+    close: sandbox.spy(rawFs.close)
+  }
+
+  const fs = proxyquire(absolutePath('lib/utils/fs'), {
+    'fs': spiedFs
+  })
+
+  const alwaysReturnTrue = () => true
+  const result = await fs.seekFile('test/fixtures/generated/large.js', alwaysReturnTrue, 32)
+  t.is(result.indexOf('/* mat start */') > -1, true)
+
+  t.is(spiedFs.open.callCount, 1)
+  t.is(spiedFs.fstat.callCount, 1)
+  t.is(spiedFs.read.callCount, 362)
+  t.is(spiedFs.close.callCount, 1)
+
+  t.deepEqual(spiedFs.open.firstCall.args[0], 'test/fixtures/generated/large.js')
+  t.deepEqual(spiedFs.open.firstCall.args[1], 'r')
+})
+
+test.serial('seekFile should returns same result with readFile', async (t) => {
+  const rawFs = require('fs')
+
+  let spiedFs = {
+    readFile: sandbox.spy(rawFs.readFile),
+    open: sandbox.spy(rawFs.open),
+    fstat: sandbox.spy(rawFs.fstat),
+    read: sandbox.spy(rawFs.read),
+    close: sandbox.spy(rawFs.close)
+  }
+
+  const fs = proxyquire(absolutePath('lib/utils/fs'), {
+    'fs': spiedFs
+  })
+
+  const result = await fs.seekFile('test/fixtures/generated/small.js')
+
+  t.is(spiedFs.open.callCount, 1)
+  t.is(spiedFs.fstat.callCount, 1)
+  t.is(spiedFs.read.callCount, 1)
+  t.is(spiedFs.close.callCount, 1)
+
+  t.deepEqual(spiedFs.open.firstCall.args[0], 'test/fixtures/generated/small.js')
+  t.deepEqual(spiedFs.open.firstCall.args[1], 'r')
+
+  const readFileResult = await fs.readFile('test/fixtures/generated/small.js')
+  t.is(result, readFileResult)
+})
+
+test.serial('seekFile should not return whole file if predicate returns false', async (t) => {
+  const rawFs = require('fs')
+
+  let spiedFs = {
+    open: sandbox.spy(rawFs.open),
+    fstat: sandbox.spy(rawFs.fstat),
+    read: sandbox.spy(rawFs.read),
+    close: sandbox.spy(rawFs.close)
+  }
+
+  const fs = proxyquire(absolutePath('lib/utils/fs'), {
+    'fs': spiedFs
+  })
+
+  const alwaysReturnFalse = () => false
+  const result = await fs.seekFile('test/fixtures/generated/large.js', alwaysReturnFalse, 32)
+  t.is(result.indexOf('/* mat start */') > -1, true)
+
+  t.is(spiedFs.open.callCount, 1)
+  t.is(spiedFs.fstat.callCount, 1)
+  t.is(spiedFs.read.callCount, 1)
+  t.is(spiedFs.close.callCount, 1)
+
+  t.deepEqual(spiedFs.open.firstCall.args[0], 'test/fixtures/generated/large.js')
+  t.deepEqual(spiedFs.open.firstCall.args[1], 'r')
 })
 
 test('writeFile should call mkdirp and fs.writeFile', async (t) => {

@@ -25,12 +25,12 @@ test('requireGlob should require module using glob pattern', async (t) => {
 
 // test https://github.com/sindresorhus/import-fresh feature(for file watcher).
 test('requireGlob should always require fresh module ', async (t) => {
-  const modules = await requireGlob(['test/fixtures/**/*.js'])
+  const modules = await requireGlob(['test/fixtures/*.js'])
   t.deepEqual(_.keys(modules), ['test/fixtures/fresh.js'])
 
   t.is(modules['test/fixtures/fresh.js'](), 1)
   t.is(modules['test/fixtures/fresh.js'](), 2)
 
-  const modules2 = await requireGlob(['test/fixtures/**/*.js'])
+  const modules2 = await requireGlob(['test/fixtures/*.js'])
   t.is(modules2['test/fixtures/fresh.js'](), 1)
 })

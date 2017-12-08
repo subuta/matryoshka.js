@@ -7,6 +7,8 @@ import { Readable, PassThrough } from 'stream'
 import es from 'event-stream'
 import _ from 'lodash'
 
+import { ft } from 'test/helper.js'
+
 const sandbox = sinon.sandbox.create()
 
 import { absolutePath } from 'lib/utils/path'
@@ -66,12 +68,9 @@ test('readFile should call fs.readFile', async (t) => {
 })
 
 test.serial('updateFile should update generated file.', async (t) => {
-  const rawFs = require('fs')
-
   const dummyWriteStream = new PassThrough()
-  console.log(dummyWriteStream);
 
-  const originalFile = `
+  const originalFile = ft`
     /* mat start */
     console.log('hoge');
     /* mat end */
@@ -79,9 +78,7 @@ test.serial('updateFile should update generated file.', async (t) => {
     console.log('fuga');
   `
 
-  const data = `
-    console.log('piyo');
-  `
+  const data = `console.log('piyo');`
 
   let spiedFs = {
     createReadStream: sandbox.spy(() => createReadStreamFromString(originalFile)),
@@ -95,60 +92,28 @@ test.serial('updateFile should update generated file.', async (t) => {
   let chunk = []
   dummyWriteStream.on('data', (line) => chunk.push(line.toString('utf-8')))
 
-  const result = await fs.updateFile('test/fixtures/generated/small.js', data)
+  await fs.updateFile('test/fixtures/generated/small.js', data)
   const writeFileResult = chunk.join('\n')
 
-  console.log(writeFileResult);
+  t.is(spiedFs.createReadStream.callCount, 1)
+  t.is(spiedFs.createWriteStream.callCount, 1)
 
-  console.log('result = ', result)
+  t.deepEqual(spiedFs.createReadStream.firstCall.args[0], 'test/fixtures/generated/small.js')
+  t.deepEqual(spiedFs.createReadStream.firstCall.args[1], {encoding: 'utf8'})
 
-  // t.is(spiedFs.open.callCount, 1)
-  // t.is(spiedFs.fstat.callCount, 1)
-  // t.is(spiedFs.read.callCount, 1)
-  // t.is(spiedFs.close.callCount, 1)
-  //
-  // t.deepEqual(spiedFs.open.firstCall.args[0], 'test/fixtures/generated/small.js')
-  // t.deepEqual(spiedFs.open.firstCall.args[1], 'r')
-  //
-  // const readFileResult = await fs.readFile('test/fixtures/generated/small.js')
-  // t.is(result, readFileResult)
+  t.deepEqual(spiedFs.createWriteStream.firstCall.args[0], 'test/fixtures/generated/small.js')
+  t.deepEqual(spiedFs.createWriteStream.firstCall.args[1], {encoding: 'utf8'})
+
+  const expected = ft`
+    /* mat start */
+    console.log('piyo');
+    /* mat end */
+    
+    console.log('fuga');
+  `
+
+  t.is(ft([writeFileResult]), expected)
 })
-
-// test('readFileStream should call fs.readFileStream', async (t) => {
-//   const file = `
-//     a
-//     b
-//     c
-//     d
-//     e
-//   `
-//
-//   const readStream = createReadStreamFromString(file)
-//   readStream.destroy = sandbox.spy()
-//   sandbox.spy(readStream, 'emit')
-//
-//   readStream.pipe(es.split()).on('data', (line) => {
-//     console.log(line);
-//   })
-//
-//   const spiedFs = {
-//     createReadStream: sandbox.spy(() => readStream)
-//   }
-//
-//   const fs = proxyquire(absolutePath('lib/utils/fs'), {
-//     'fs': spiedFs
-//   })
-//
-//   const result = await fs.readFileStream('hoge.js')
-//
-//   t.is(result, file)
-//
-//   t.is(spiedFs.createReadStream.callCount, 1)
-//   t.is(readStream.destroy.callCount, 1)
-//
-//   t.deepEqual(spiedFs.createReadStream.firstCall.args[0], 'hoge.js')
-//   t.deepEqual(spiedFs.createReadStream.firstCall.args[1], {encoding: 'utf8'})
-// })
 
 test('readFile should reject with err if fs.readFile returns error', async (t) => {
   const dummyError = new Error('dummy error')

@@ -189,7 +189,7 @@ test.serial('seekFile should returns same result with readFile', async (t) => {
   t.deepEqual(spiedFs.open.firstCall.args[1], 'r')
 
   const readFileResult = await fs.readFile('test/fixtures/generated/small.js')
-  t.is(result, readFileResult)
+  t.is(ft(result), ft(readFileResult))
 })
 
 test.serial('seekFile should not return whole file if predicate returns false', async (t) => {
@@ -217,6 +217,38 @@ test.serial('seekFile should not return whole file if predicate returns false', 
 
   t.deepEqual(spiedFs.open.firstCall.args[0], 'test/fixtures/generated/large.js')
   t.deepEqual(spiedFs.open.firstCall.args[1], 'r')
+})
+
+test.serial('readFileByPragma should extract file content between START-END pragma', async (t) => {
+  const rawFs = require('fs')
+
+  let spiedFs = {
+    readFile: sandbox.spy(rawFs.readFile),
+    open: sandbox.spy(rawFs.open),
+    fstat: sandbox.spy(rawFs.fstat),
+    read: sandbox.spy(rawFs.read),
+    close: sandbox.spy(rawFs.close)
+  }
+
+  const fs = proxyquire(absolutePath('lib/utils/fs'), {
+    'fs': spiedFs
+  })
+
+  const result = await fs.readFileByPragma('test/fixtures/generated/large.js')
+
+  t.is(spiedFs.open.callCount, 1)
+  t.is(spiedFs.fstat.callCount, 1)
+  t.is(spiedFs.read.callCount, 1)
+  t.is(spiedFs.close.callCount, 1)
+
+  t.deepEqual(spiedFs.open.firstCall.args[0], 'test/fixtures/generated/large.js')
+  t.deepEqual(spiedFs.open.firstCall.args[1], 'r')
+
+  t.is(result, ft`
+    /* mat start */
+    console.log('hoge');
+    /* mat end */
+  `)
 })
 
 test('writeFile should call mkdirp and fs.writeFile', async (t) => {

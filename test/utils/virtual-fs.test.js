@@ -363,7 +363,7 @@ test('perform should process data change for same file', async (t) => {
   })
 })
 
-test('perform should process file update for same file', async (t) => {
+test.serial('perform should process file update for same file', async (t) => {
   const {vfs, dummyFs} = t.context
 
   vfs.writeFile('hoge.js', `const hoge = 'fuga'`)
@@ -413,7 +413,7 @@ test('perform should process file update for same file', async (t) => {
 
   await vfs.perform()
 
-  // should writeFile using fs.
+  // should updateFile using fs.
   t.is(dummyFs.writeFile.callCount, 1)
   t.is(dummyFs.updateFileByPragma.callCount, 1)
   t.is(dummyFs.updateFileByPragma.calledWith('hoge.js', `const hoge = 'piyo'`), true)

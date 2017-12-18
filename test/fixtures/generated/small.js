@@ -1,5 +1,5 @@
-/* mat start */
+/* mat CUSTOM LOGIC [start] */
 console.log('hoge');
-/* mat end */
+/* mat CUSTOM LOGIC [end] */
 
 console.log('fuga');

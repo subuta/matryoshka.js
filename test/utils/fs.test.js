@@ -13,7 +13,6 @@ import { ft } from 'test/helper.js'
 const sandbox = sinon.sandbox.create()
 
 import { absolutePath } from 'lib/utils/path'
-import { wrapPragma } from '../../lib/utils/mat'
 
 const proxyquire = require('proxyquire').noCallThru()
 
@@ -89,20 +88,26 @@ test('rename should call fs.rename', async (t) => {
 })
 
 test.serial('updateFileByPragma should update generated file.', async (t) => {
+  const rawFs = require('fs')
+
   const dummyWriteStream = new PassThrough()
 
-  const originalFile = ft`
-    /* mat start */
-    console.log('hoge');
-    /* mat end */
+  const data = ft`
+    const fuga = 'hoge'
+        
+    /* mat CUSTOM LOGIC [start] */
+    console.log('piyo');
+    /* mat CUSTOM LOGIC [end] */
     
-    console.log('fuga');
+    const hoge = 'piyo'
   `
 
-  const data = `console.log('piyo');`
-
   let spiedFs = {
-    createReadStream: sandbox.spy(() => createReadStreamFromString(originalFile)),
+    open: sandbox.spy(rawFs.open),
+    fstat: sandbox.spy(rawFs.fstat),
+    read: sandbox.spy(rawFs.read),
+    close: sandbox.spy(rawFs.close),
+    createReadStream: sandbox.spy(rawFs.createReadStream),
     createWriteStream: sandbox.spy(() => dummyWriteStream),
     rename: sandbox.spy((_, __, cb) => cb(null))
   }
@@ -114,15 +119,15 @@ test.serial('updateFileByPragma should update generated file.', async (t) => {
   let chunk = []
   dummyWriteStream.on('data', (line) => chunk.push(line.toString('utf-8')))
 
-  await fs.updateFileByPragma('test/fixtures/generated/small.js', wrapPragma(data))
+  await fs.updateFileByPragma('test/fixtures/generated/small.js', data)
   const writeFileResult = chunk.join('\n')
 
-  t.is(spiedFs.createReadStream.callCount, 1)
+  t.is(spiedFs.createReadStream.callCount, 0)
   t.is(spiedFs.createWriteStream.callCount, 1)
   t.is(spiedFs.rename.callCount, 1)
 
-  t.deepEqual(spiedFs.createReadStream.firstCall.args[0], 'test/fixtures/generated/small.js')
-  t.deepEqual(spiedFs.createReadStream.firstCall.args[1], {encoding: 'utf8', flags: 'r'})
+  // t.deepEqual(spiedFs.createReadStream.firstCall.args[0], 'test/fixtures/generated/small.js')
+  // t.deepEqual(spiedFs.createReadStream.firstCall.args[1], {encoding: 'utf8', flags: 'r'})
 
   t.deepEqual(spiedFs.createWriteStream.firstCall.args[0], 'test/fixtures/generated/.small.js.tmp')
   t.deepEqual(spiedFs.createWriteStream.firstCall.args[1], {encoding: 'utf8'})
@@ -132,11 +137,13 @@ test.serial('updateFileByPragma should update generated file.', async (t) => {
   t.deepEqual(spiedFs.rename.firstCall.args[1], 'test/fixtures/generated/small.js')
 
   const expected = ft`
-    /* mat start */
-    console.log('piyo');
-    /* mat end */
+    const fuga = 'hoge'
+        
+    /* mat CUSTOM LOGIC [start] */
+    console.log('hoge');
+    /* mat CUSTOM LOGIC [end] */
     
-    console.log('fuga');
+    const hoge = 'piyo'
   `
 
   t.is(ft([writeFileResult]), expected)
@@ -177,17 +184,18 @@ test.serial('seekFile should returns whole file if predicate omitted', async (t)
   })
 
   const alwaysReturnTrue = () => true
-  const result = await fs.seekFile('test/fixtures/generated/large.js', alwaysReturnTrue, 32)
-  t.is(result.indexOf('/* mat start */') > -1, true)
+  const { data } = await fs.seekFile('test/fixtures/generated/large.js', alwaysReturnTrue, 32)
+  t.is(data.indexOf('/* mat CUSTOM LOGIC [start] */') > -1, true)
 
   t.is(spiedFs.open.callCount, 1)
   t.is(spiedFs.fstat.callCount, 1)
-  t.is(spiedFs.read.callCount, 362)
+  t.is(spiedFs.read.callCount, 363)
   t.is(spiedFs.close.callCount, 1)
 
   t.deepEqual(spiedFs.open.firstCall.args[0], 'test/fixtures/generated/large.js')
   t.deepEqual(spiedFs.open.firstCall.args[1], 'r')
 })
+
 
 test.serial('seekFile should returns same result with readFile', async (t) => {
   const rawFs = require('fs')
@@ -204,7 +212,7 @@ test.serial('seekFile should returns same result with readFile', async (t) => {
     'fs': spiedFs
   })
 
-  const result = await fs.seekFile('test/fixtures/generated/small.js')
+  const { data } = await fs.seekFile('test/fixtures/generated/small.js')
 
   t.is(spiedFs.open.callCount, 1)
   t.is(spiedFs.fstat.callCount, 1)
@@ -215,7 +223,7 @@ test.serial('seekFile should returns same result with readFile', async (t) => {
   t.deepEqual(spiedFs.open.firstCall.args[1], 'r')
 
   const readFileResult = await fs.readFile('test/fixtures/generated/small.js')
-  t.is(ft(result), ft(readFileResult))
+  t.is(ft(data), ft(readFileResult))
 })
 
 test.serial('seekFile should not return whole file if predicate returns false', async (t) => {
@@ -233,8 +241,8 @@ test.serial('seekFile should not return whole file if predicate returns false', 
   })
 
   const alwaysReturnFalse = () => false
-  const result = await fs.seekFile('test/fixtures/generated/large.js', alwaysReturnFalse, 32)
-  t.is(result.indexOf('/* mat start */') > -1, true)
+  const { data } = await fs.seekFile('test/fixtures/generated/large.js', alwaysReturnFalse, 32)
+  t.is(data.indexOf('/* mat CUSTOM LOGIC [start] */') > -1, true)
 
   t.is(spiedFs.open.callCount, 1)
   t.is(spiedFs.fstat.callCount, 1)
@@ -271,9 +279,9 @@ test.serial('readFileByPragma should extract file content between START-END prag
   t.deepEqual(spiedFs.open.firstCall.args[1], 'r')
 
   t.is(result, ft`
-    /* mat start */
+    /* mat CUSTOM LOGIC [start] */
     console.log('hoge');
-    /* mat end */
+    /* mat CUSTOM LOGIC [end] */
   `)
 })
 

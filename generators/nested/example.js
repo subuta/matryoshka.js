@@ -4,9 +4,9 @@ import os from 'os'
 
 // format string
 export const ft = (str) => {
-  return _.compact(_.map(str.split(os.EOL), line => {
+  return _.map(str.split(os.EOL), line => {
     return _.trim(line)
-  })).join(os.EOL)
+  }).join(os.EOL).trim(os.EOL)
 }
 
 export default (ctx) => {
@@ -19,7 +19,7 @@ export default (ctx) => {
       /* mat CUSTOM LOGIC [start] */
       /* mat CUSTOM LOGIC [end] */
       
-      const piyo = 'piyoo'
+      const piyo = 'piyo'
     `))
   })
 }

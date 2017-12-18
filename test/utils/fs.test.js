@@ -99,6 +99,12 @@ test.serial('updateFileByPragma should update generated file.', async (t) => {
     console.log('piyo');
     /* mat CUSTOM LOGIC [end] */
     
+    const piyo = 'hoge'
+    
+    /* mat CUSTOM LOGIC 2 [start] */
+    console.log('piyo');
+    /* mat CUSTOM LOGIC 2 [end] */
+    
     const hoge = 'piyo'
   `
 
@@ -123,11 +129,13 @@ test.serial('updateFileByPragma should update generated file.', async (t) => {
   const writeFileResult = chunk.join('\n')
 
   t.is(spiedFs.createReadStream.callCount, 0)
+  t.is(spiedFs.open.callCount, 2)
+  t.is(spiedFs.read.callCount, 2)
   t.is(spiedFs.createWriteStream.callCount, 1)
   t.is(spiedFs.rename.callCount, 1)
 
-  // t.deepEqual(spiedFs.createReadStream.firstCall.args[0], 'test/fixtures/generated/small.js')
-  // t.deepEqual(spiedFs.createReadStream.firstCall.args[1], {encoding: 'utf8', flags: 'r'})
+  t.deepEqual(spiedFs.open.firstCall.args[0], 'test/fixtures/generated/small.js')
+  t.deepEqual(spiedFs.open.secondCall.args[0], 'test/fixtures/generated/small.js')
 
   t.deepEqual(spiedFs.createWriteStream.firstCall.args[0], 'test/fixtures/generated/.small.js.tmp')
   t.deepEqual(spiedFs.createWriteStream.firstCall.args[1], {encoding: 'utf8'})
@@ -138,10 +146,16 @@ test.serial('updateFileByPragma should update generated file.', async (t) => {
 
   const expected = ft`
     const fuga = 'hoge'
-        
+    
     /* mat CUSTOM LOGIC [start] */
     console.log('hoge');
     /* mat CUSTOM LOGIC [end] */
+    
+    const piyo = 'hoge'
+    
+    /* mat CUSTOM LOGIC 2 [start] */
+    console.log('fuga');
+    /* mat CUSTOM LOGIC 2 [end] */
     
     const hoge = 'piyo'
   `
@@ -278,7 +292,7 @@ test.serial('readFileByPragma should extract file content between START-END prag
   t.deepEqual(spiedFs.open.firstCall.args[0], 'test/fixtures/generated/large.js')
   t.deepEqual(spiedFs.open.firstCall.args[1], 'r')
 
-  t.is(result, ft`
+  t.is(result.data, ft`
     /* mat CUSTOM LOGIC [start] */
     console.log('hoge');
     /* mat CUSTOM LOGIC [end] */

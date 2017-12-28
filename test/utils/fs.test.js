@@ -198,7 +198,7 @@ test.serial('seekFile should returns whole file if predicate omitted', async (t)
   })
 
   const alwaysReturnTrue = () => true
-  const { data } = await fs.seekFile('test/fixtures/generated/large.js', alwaysReturnTrue, 32)
+  const {data} = await fs.seekFile('test/fixtures/generated/large.js', alwaysReturnTrue, 32)
   t.is(data.indexOf('/* mat CUSTOM LOGIC [start] */') > -1, true)
 
   t.is(spiedFs.open.callCount, 1)
@@ -209,7 +209,6 @@ test.serial('seekFile should returns whole file if predicate omitted', async (t)
   t.deepEqual(spiedFs.open.firstCall.args[0], 'test/fixtures/generated/large.js')
   t.deepEqual(spiedFs.open.firstCall.args[1], 'r')
 })
-
 
 test.serial('seekFile should returns same result with readFile', async (t) => {
   const rawFs = require('fs')
@@ -226,7 +225,7 @@ test.serial('seekFile should returns same result with readFile', async (t) => {
     'fs': spiedFs
   })
 
-  const { data } = await fs.seekFile('test/fixtures/generated/small.js')
+  const {data} = await fs.seekFile('test/fixtures/generated/small.js')
 
   t.is(spiedFs.open.callCount, 1)
   t.is(spiedFs.fstat.callCount, 1)
@@ -255,7 +254,7 @@ test.serial('seekFile should not return whole file if predicate returns false', 
   })
 
   const alwaysReturnFalse = () => false
-  const { data } = await fs.seekFile('test/fixtures/generated/large.js', alwaysReturnFalse, 32)
+  const {data} = await fs.seekFile('test/fixtures/generated/large.js', alwaysReturnFalse, 32)
   t.is(data.indexOf('/* mat CUSTOM LOGIC [start] */') > -1, true)
 
   t.is(spiedFs.open.callCount, 1)
@@ -371,14 +370,14 @@ test('writeFile should reject with err if fs.writeFile returns error', async (t)
   t.is(typeof spiedFs.writeFile.firstCall.args[3], 'function')
 })
 
-test('remove should call rimraf', async (t) => {
+test('remove with force should call rimraf', async (t) => {
   const spiedRimRaf = sandbox.spy((pattern, opts, cb) => cb(null))
 
   const fs = proxyquire(absolutePath('lib/utils/fs'), {
     'rimraf': spiedRimRaf
   })
 
-  const result = await fs.remove('hoge.js')
+  const result = await fs.remove('hoge.js', true)
   t.deepEqual(result, true)
 
   t.is(spiedRimRaf.callCount, 1)
@@ -393,9 +392,75 @@ test('remove should reject with err if rimraf returns error', async (t) => {
     'rimraf': spiedRimRaf
   })
 
-  const result = await t.throws(fs.remove('hoge.js'))
+  const result = await t.throws(fs.remove('hoge.js', true))
   t.deepEqual(result, dummyError)
 
   t.is(spiedRimRaf.callCount, 1)
   t.deepEqual(spiedRimRaf.firstCall.args[0], 'hoge.js')
+})
+
+test('remove folder without force should call fs.rmdir', async (t) => {
+  const spied = sandbox.spy((pattern, cb) => cb(null, true))
+
+  const fs = proxyquire(absolutePath('lib/utils/fs'), {
+    'fs': {
+      rmdir: spied
+    }
+  })
+
+  const result = await fs.remove('hoge')
+  t.deepEqual(result, true)
+
+  t.is(spied.callCount, 1)
+  t.deepEqual(spied.firstCall.args[0], 'hoge')
+})
+
+test('remove file without force should reject with err if rmdir returns error', async (t) => {
+  const dummyError = new Error('dummy error')
+  const spied = sandbox.spy((pattern, cb) => cb(dummyError))
+
+  const fs = proxyquire(absolutePath('lib/utils/fs'), {
+    'fs': {
+      rmdir: spied
+    }
+  })
+
+  const result = await t.throws(fs.remove('hoge'))
+  t.deepEqual(result, dummyError)
+
+  t.is(spied.callCount, 1)
+  t.deepEqual(spied.firstCall.args[0], 'hoge')
+})
+
+test('remove folder without force should call fs.unlink', async (t) => {
+  const spied = sandbox.spy((pattern, cb) => cb(null, true))
+
+  const fs = proxyquire(absolutePath('lib/utils/fs'), {
+    'fs': {
+      unlink: spied
+    }
+  })
+
+  const result = await fs.remove('hoge.js')
+  t.deepEqual(result, true)
+
+  t.is(spied.callCount, 1)
+  t.deepEqual(spied.firstCall.args[0], 'hoge.js')
+})
+
+test('remove file without force should reject with err if unlink returns error', async (t) => {
+  const dummyError = new Error('dummy error')
+  const spied = sandbox.spy((pattern, cb) => cb(dummyError))
+
+  const fs = proxyquire(absolutePath('lib/utils/fs'), {
+    'fs': {
+      unlink: spied
+    }
+  })
+
+  const result = await t.throws(fs.remove('hoge.js'))
+  t.deepEqual(result, dummyError)
+
+  t.is(spied.callCount, 1)
+  t.deepEqual(spied.firstCall.args[0], 'hoge.js')
 })

@@ -548,7 +548,7 @@ test.serial('perform should delete extra empty directory on second perform call'
 
   t.is(dummyFs.remove.callCount, 2)
   t.deepEqual(dummyFs.remove.firstCall.args, ['first/hoge.js'])
-  t.deepEqual(dummyFs.remove.secondCall.args, ['first'])
+  t.deepEqual(dummyFs.remove.secondCall.args, ['first', false])
 
   t.deepEqual(vfs.getState(), {
     pending: [],
@@ -568,7 +568,7 @@ test.serial('perform should delete extra empty directory on second perform call'
   // should not call for fuga.js(because it's not changed while 2 to 3 time call)
   t.is(dummyFs.remove.callCount, 2)
   t.deepEqual(dummyFs.remove.firstCall.args, ['first/hoge.js'])
-  t.deepEqual(dummyFs.remove.secondCall.args, ['first'])
+  t.deepEqual(dummyFs.remove.secondCall.args, ['first', false])
 
   t.deepEqual(vfs.getState(), {
     pending: [],
@@ -623,7 +623,7 @@ test.serial('perform should delete extra empty nested directory on second perfor
 
   t.is(dummyFs.remove.callCount, 2)
   t.deepEqual(dummyFs.remove.firstCall.args, ['first/nested/hoge.js'])
-  t.deepEqual(dummyFs.remove.secondCall.args, ['first/nested'])
+  t.deepEqual(dummyFs.remove.secondCall.args, ['first/nested', false])
 
   t.deepEqual(vfs.getState(), {
     pending: [],
@@ -643,7 +643,7 @@ test.serial('perform should delete extra empty nested directory on second perfor
   // should not call for fuga.js(because it's not changed while 2 to 3 time call)
   t.is(dummyFs.remove.callCount, 2)
   t.deepEqual(dummyFs.remove.firstCall.args, ['first/nested/hoge.js'])
-  t.deepEqual(dummyFs.remove.secondCall.args, ['first/nested'])
+  t.deepEqual(dummyFs.remove.secondCall.args, ['first/nested', false])
 
   t.deepEqual(vfs.getState(), {
     pending: [],
@@ -711,7 +711,7 @@ test.serial('perform should delete empty nested directory even if complex operat
   t.is(dummyFs.remove.callCount, 4)
   t.deepEqual(dummyFs.remove.secondCall.args, ['first/hoge.js'])
   t.deepEqual(dummyFs.remove.thirdCall.args, ['first/nested/deepNested/hoge.js'])
-  t.deepEqual(dummyFs.remove.getCall(3).args, ['first/nested'])
+  t.deepEqual(dummyFs.remove.getCall(3).args, ['first/nested', false])
 
   t.deepEqual(vfs.getState(), {
     pending: [],

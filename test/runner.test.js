@@ -168,7 +168,11 @@ test.serial('should run generator with clean', async (t) => {
   t.is(spiedFs.remove.callCount, 0)
   t.is(spiedFs.writeFile.callCount, 0)
 
-  t.deepEqual(spiedRequireGlobs.firstCall.args, [[path.join('test/generators', '**/*.js'), '!**/_*/**']])
+  t.deepEqual(spiedRequireGlobs.firstCall.args, [[
+    'test/generators/index.js',
+    'test/generators/nested/hoge.js',
+    'test/generators/nested/index.js'
+  ]])
   t.is(modules['test/generators/index.js'].callCount, 1)
   t.is(modules['test/generators/nested/hoge.js'].callCount, 1)
   t.is(modules['test/generators/nested/index.js'].callCount, 1)
@@ -258,7 +262,11 @@ test.serial('should run generator with update', async (t) => {
   t.is(spiedFs.remove.callCount, 0)
   t.is(spiedFs.writeFile.callCount, 0)
 
-  t.deepEqual(spiedRequireGlobs.firstCall.args, [[path.join('test/generators', '**/*.js'), '!**/_*/**']])
+  t.deepEqual(spiedRequireGlobs.firstCall.args, [[
+    'test/generators/index.js',
+    'test/generators/nested/hoge.js',
+    'test/generators/nested/index.js'
+  ]])
   t.is(modules['test/generators/index.js'].callCount, 1)
 
   t.is(formatTree(runner.ls(true)), formatTree(`

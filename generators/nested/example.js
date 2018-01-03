@@ -2,6 +2,8 @@ import Promise from 'bluebird'
 import _ from 'lodash'
 import os from 'os'
 
+import hoge from './_hoge'
+
 // format string
 export const ft = (str) => {
   return _.map(str.split(os.EOL), line => {
@@ -19,7 +21,7 @@ export default (ctx) => {
       /* mat CUSTOM LOGIC [start] */
       /* mat CUSTOM LOGIC [end] */
       
-      const piyo = 'piyo'
+      const piyo = '${hoge}'
     `))
   })
 }

@@ -283,11 +283,15 @@ test.serial('updateFileByPragma should create file if target file does not exist
     close: sandbox.spy(rawFs.close),
     createReadStream: sandbox.spy(rawFs.createReadStream),
     createWriteStream: sandbox.spy(() => dummyWriteStream),
-    rename: sandbox.spy((_, __, cb) => cb(null))
+    rename: sandbox.spy((_, __, cb) => cb(null)),
+    writeFile: sandbox.spy((_, __, ___, cb) => cb(undefined))
   }
 
+  const spiedRimRaf = sandbox.spy((pattern, opts, cb) => cb(null))
+
   const fs = proxyquire(absolutePath('lib/utils/fs'), {
-    'fs': spiedFs
+    'fs': spiedFs,
+    'rimraf': spiedRimRaf
   })
 
   let chunk = []
@@ -300,16 +304,19 @@ test.serial('updateFileByPragma should create file if target file does not exist
   t.is(spiedFs.open.callCount, 1)
   t.is(spiedFs.read.callCount, 0)
   t.is(spiedFs.createWriteStream.callCount, 1)
-  t.is(spiedFs.rename.callCount, 1)
+  t.is(spiedFs.rename.callCount, 0)
+  t.is(spiedRimRaf.callCount, 1)
 
   t.deepEqual(spiedFs.open.firstCall.args[0], 'test/fixtures/generated/not-exists.js')
 
   t.deepEqual(spiedFs.createWriteStream.firstCall.args[0], 'test/fixtures/generated/.not-exists.js.tmp')
   t.deepEqual(spiedFs.createWriteStream.firstCall.args[1], {encoding: 'utf8'})
 
-  // then rename .tmp to originalFile.
-  t.deepEqual(spiedFs.rename.firstCall.args[0], 'test/fixtures/generated/.not-exists.js.tmp')
-  t.deepEqual(spiedFs.rename.firstCall.args[1], 'test/fixtures/generated/not-exists.js')
+  // remove .tmp file.
+  t.deepEqual(spiedRimRaf.firstCall.args[0], 'test/fixtures/generated/.not-exists.js.tmp')
+
+  // then try writeFile.
+  t.deepEqual(spiedFs.writeFile.firstCall.args[0], 'test/fixtures/generated/not-exists.js')
 
   const expected = ft`
     const fuga = 'hoge'

@@ -87,7 +87,103 @@ test('rename should call fs.rename', async (t) => {
   t.is(typeof spiedFs.rename.firstCall.args[2], 'function')
 })
 
-test.serial('updateFileByPragma should update generated file.', async (t) => {
+test.serial('updateFileByPragma should update complex file.', async (t) => {
+  const rawFs = require('fs')
+
+  const dummyWriteStream = new PassThrough()
+
+  const data = ft`
+    const {hoge} = ctx.request.body
+    
+    // hogehoge
+    let params = {}
+    
+    /* mat Before create [start] */
+    /* mat Before create [end] */
+    
+    let response = await Hoge.query()
+      .insert({
+        ...hoge,
+        ...params
+      })
+      .eager('')
+      
+    /* mat After create [start] */
+    /* mat After create [end] */
+  
+    ctx.body = response
+  `
+
+  let spiedFs = {
+    open: sandbox.spy(rawFs.open),
+    fstat: sandbox.spy(rawFs.fstat),
+    read: sandbox.spy(rawFs.read),
+    close: sandbox.spy(rawFs.close),
+    createReadStream: sandbox.spy(rawFs.createReadStream),
+    createWriteStream: sandbox.spy(() => dummyWriteStream),
+    rename: sandbox.spy((_, __, cb) => cb(null))
+  }
+
+  const fs = proxyquire(absolutePath('lib/utils/fs'), {
+    'fs': spiedFs
+  })
+
+  let chunk = []
+  dummyWriteStream.on('data', (line) => chunk.push(line.toString('utf-8')))
+
+  await fs.updateFileByPragma('test/fixtures/generated/complex.js', data)
+  const writeFileResult = chunk.join('\n')
+
+  t.is(spiedFs.createReadStream.callCount, 0)
+  t.is(spiedFs.open.callCount, 2)
+  t.is(spiedFs.read.callCount, 3)
+  t.is(spiedFs.createWriteStream.callCount, 1)
+  t.is(spiedFs.rename.callCount, 1)
+
+  t.deepEqual(spiedFs.open.firstCall.args[0], 'test/fixtures/generated/complex.js')
+  t.deepEqual(spiedFs.open.secondCall.args[0], 'test/fixtures/generated/complex.js')
+
+  t.deepEqual(spiedFs.createWriteStream.firstCall.args[0], 'test/fixtures/generated/.complex.js.tmp')
+  t.deepEqual(spiedFs.createWriteStream.firstCall.args[1], {encoding: 'utf8'})
+
+  // then rename .tmp to originalFile.
+  t.deepEqual(spiedFs.rename.firstCall.args[0], 'test/fixtures/generated/.complex.js.tmp')
+  t.deepEqual(spiedFs.rename.firstCall.args[1], 'test/fixtures/generated/complex.js')
+
+  const expected = ft`
+    const {hoge} = ctx.request.body
+    
+    // hogehoge
+    let params = {}
+    
+    /* mat Before create [start] */
+    const ext = path.extname(name)
+    const id = uuid()
+    const tmpFileName = \`\$\{id\}\$\{ext\}\`
+    const result = await getSignedUrl(tmpFileName, attachment.type)
+    /* mat Before create [end] */
+    
+    let response = await Hoge.query()
+      .insert({
+        ...hoge,
+        ...params
+      })
+      .eager('')
+      
+    /* mat After create [start] */
+    response = {
+      result,
+      attachment: response
+    }
+    /* mat After create [end] */
+      
+    ctx.body = response
+  `
+
+  t.is(ft([writeFileResult]), expected)
+})
+
+test.serial('updateFileByPragma should ignore pragma if not found in generated file.', async (t) => {
   const rawFs = require('fs')
 
   const dummyWriteStream = new PassThrough()
@@ -125,7 +221,7 @@ test.serial('updateFileByPragma should update generated file.', async (t) => {
   let chunk = []
   dummyWriteStream.on('data', (line) => chunk.push(line.toString('utf-8')))
 
-  await fs.updateFileByPragma('test/fixtures/generated/small.js', data)
+  await fs.updateFileByPragma('test/fixtures/generated/pragma.js', data)
   const writeFileResult = chunk.join('\n')
 
   t.is(spiedFs.createReadStream.callCount, 0)
@@ -134,22 +230,18 @@ test.serial('updateFileByPragma should update generated file.', async (t) => {
   t.is(spiedFs.createWriteStream.callCount, 1)
   t.is(spiedFs.rename.callCount, 1)
 
-  t.deepEqual(spiedFs.open.firstCall.args[0], 'test/fixtures/generated/small.js')
-  t.deepEqual(spiedFs.open.secondCall.args[0], 'test/fixtures/generated/small.js')
+  t.deepEqual(spiedFs.open.firstCall.args[0], 'test/fixtures/generated/pragma.js')
+  t.deepEqual(spiedFs.open.secondCall.args[0], 'test/fixtures/generated/pragma.js')
 
-  t.deepEqual(spiedFs.createWriteStream.firstCall.args[0], 'test/fixtures/generated/.small.js.tmp')
+  t.deepEqual(spiedFs.createWriteStream.firstCall.args[0], 'test/fixtures/generated/.pragma.js.tmp')
   t.deepEqual(spiedFs.createWriteStream.firstCall.args[1], {encoding: 'utf8'})
 
   // then rename .tmp to originalFile.
-  t.deepEqual(spiedFs.rename.firstCall.args[0], 'test/fixtures/generated/.small.js.tmp')
-  t.deepEqual(spiedFs.rename.firstCall.args[1], 'test/fixtures/generated/small.js')
+  t.deepEqual(spiedFs.rename.firstCall.args[0], 'test/fixtures/generated/.pragma.js.tmp')
+  t.deepEqual(spiedFs.rename.firstCall.args[1], 'test/fixtures/generated/pragma.js')
 
   const expected = ft`
     const fuga = 'hoge'
-    
-    /* mat CUSTOM LOGIC [start] */
-    console.log('hoge');
-    /* mat CUSTOM LOGIC [end] */
     
     const piyo = 'hoge'
     
@@ -357,7 +449,7 @@ test.serial('readFileByPragma should extract file content between START-END prag
     'fs': spiedFs
   })
 
-  const result = await fs.readFileByPragma('test/fixtures/generated/large.js')
+  const result = await fs.readFileByPragma('test/fixtures/generated/large.js', 'utf8', 0, 'CUSTOM LOGIC')
 
   t.is(spiedFs.open.callCount, 1)
   t.is(spiedFs.fstat.callCount, 1)

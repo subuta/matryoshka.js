@@ -163,6 +163,82 @@ test.serial('updateFileByPragma should update generated file.', async (t) => {
   t.is(ft([writeFileResult]), expected)
 })
 
+test.serial('updateFileByPragma should create file if target file does not exists.', async (t) => {
+  const rawFs = require('fs')
+
+  const dummyWriteStream = new PassThrough()
+
+  const data = ft`
+    const fuga = 'hoge'
+        
+    /* mat CUSTOM LOGIC [start] */
+    console.log('piyo');
+    /* mat CUSTOM LOGIC [end] */
+    
+    const piyo = 'hoge'
+    
+    /* mat CUSTOM LOGIC 2 [start] */
+    console.log('piyo');
+    /* mat CUSTOM LOGIC 2 [end] */
+    
+    const hoge = 'piyo'
+  `
+
+  let spiedFs = {
+    open: sandbox.spy(rawFs.open),
+    fstat: sandbox.spy(rawFs.fstat),
+    read: sandbox.spy(rawFs.read),
+    close: sandbox.spy(rawFs.close),
+    createReadStream: sandbox.spy(rawFs.createReadStream),
+    createWriteStream: sandbox.spy(() => dummyWriteStream),
+    rename: sandbox.spy((_, __, cb) => cb(null))
+  }
+
+  const fs = proxyquire(absolutePath('lib/utils/fs'), {
+    'fs': spiedFs
+  })
+
+  let chunk = []
+  dummyWriteStream.on('data', (line) => chunk.push(line.toString('utf-8')))
+
+  await fs.updateFileByPragma('test/fixtures/generated/not-exists.js', data)
+  const writeFileResult = chunk.join('\n')
+
+  t.is(spiedFs.createReadStream.callCount, 0)
+  t.is(spiedFs.open.callCount, 1)
+  t.is(spiedFs.read.callCount, 0)
+  t.is(spiedFs.createWriteStream.callCount, 1)
+  t.is(spiedFs.rename.callCount, 1)
+
+  t.deepEqual(spiedFs.open.firstCall.args[0], 'test/fixtures/generated/not-exists.js')
+
+  t.deepEqual(spiedFs.createWriteStream.firstCall.args[0], 'test/fixtures/generated/.not-exists.js.tmp')
+  t.deepEqual(spiedFs.createWriteStream.firstCall.args[1], {encoding: 'utf8'})
+
+  // then rename .tmp to originalFile.
+  t.deepEqual(spiedFs.rename.firstCall.args[0], 'test/fixtures/generated/.not-exists.js.tmp')
+  t.deepEqual(spiedFs.rename.firstCall.args[1], 'test/fixtures/generated/not-exists.js')
+
+  const expected = ft`
+    const fuga = 'hoge'
+    
+    /* mat CUSTOM LOGIC [start] */
+    console.log('piyo');
+    /* mat CUSTOM LOGIC [end] */
+    
+    const piyo = 'hoge'
+    
+    /* mat CUSTOM LOGIC 2 [start] */
+    console.log('piyo');
+    /* mat CUSTOM LOGIC 2 [end] */
+    
+    const hoge = 'piyo'
+  `
+
+  t.is(ft([writeFileResult]), expected)
+})
+
+
 test('readFile should reject with err if fs.readFile returns error', async (t) => {
   const dummyError = new Error('dummy error')
   const spiedFs = {

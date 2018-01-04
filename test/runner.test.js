@@ -48,7 +48,7 @@ test.serial('should run generator', async (t) => {
 
   const spiedFs = {
     listFiles: sandbox.spy(() => new Promise(resolve => resolve(_.keys(files)))),
-    writeFile: sandbox.spy(),
+    updateFileByPragma: sandbox.spy(),
     readFile: sandbox.spy((file) => new Promise((resolve) => resolve(files[file]))),
     remove: sandbox.spy()
   }
@@ -68,9 +68,9 @@ test.serial('should run generator', async (t) => {
   })
 
   t.is(spiedRequireGlobs.callCount, 0)
-  t.is(spiedFs.writeFile.callCount, 0)
+  t.is(spiedFs.updateFileByPragma.callCount, 0)
 
-  // should call listFiles with dest at createRunner.
+  // should not call listFiles with dest at createRunner.
   t.is(spiedFs.listFiles.callCount, 0)
 
   t.is(modules['test/generators/index.js'].callCount, 0)
@@ -84,7 +84,7 @@ test.serial('should run generator', async (t) => {
 
   // should skip writeFile for same content.
   t.is(spiedFs.remove.callCount, 0)
-  t.is(spiedFs.writeFile.callCount, 3)
+  t.is(spiedFs.updateFileByPragma.callCount, 3)
 
   t.is(modules['test/generators/index.js'].callCount, 1)
   t.is(modules['test/generators/nested/hoge.js'].callCount, 1)

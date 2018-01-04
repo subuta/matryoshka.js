@@ -144,12 +144,12 @@ test('perform should process pending task', async (t) => {
     cache: []
   })
 
-  t.is(dummyFs.writeFile.callCount, 0)
+  t.is(dummyFs.updateFileByPragma.callCount, 0)
   await vfs.perform()
 
   // should writeFile using fs.
-  t.is(dummyFs.writeFile.callCount, 1)
-  t.is(dummyFs.writeFile.calledWith(fileName, `const hoge = 'fuga'`), true)
+  t.is(dummyFs.updateFileByPragma.callCount, 1)
+  t.is(dummyFs.updateFileByPragma.calledWith(fileName, `const hoge = 'fuga'`), true)
 
   t.deepEqual(vfs.getState(), {
     pending: [],
@@ -199,14 +199,14 @@ test('perform should process multiple pending task', async (t) => {
     cache: []
   })
 
-  t.is(dummyFs.writeFile.callCount, 0)
+  t.is(dummyFs.updateFileByPragma.callCount, 0)
   await vfs.perform()
 
   // should writeFile using fs.
-  t.is(dummyFs.writeFile.callCount, 3)
-  t.is(dummyFs.writeFile.calledWith('sample/hoge.js', `const hoge = 'fuga'`), true)
-  t.is(dummyFs.writeFile.calledWith('sample/hoge2.js', `const hoge = 'fuga'`), true)
-  t.is(dummyFs.writeFile.calledWith('index.js', `const hoge = 'fuga'`), true)
+  t.is(dummyFs.updateFileByPragma.callCount, 3)
+  t.is(dummyFs.updateFileByPragma.calledWith('sample/hoge.js', `const hoge = 'fuga'`), true)
+  t.is(dummyFs.updateFileByPragma.calledWith('sample/hoge2.js', `const hoge = 'fuga'`), true)
+  t.is(dummyFs.updateFileByPragma.calledWith('index.js', `const hoge = 'fuga'`), true)
 
   t.deepEqual(vfs.getState(), {
     pending: [],
@@ -258,12 +258,12 @@ test('perform should not process pending task when dryRun = true', async (t) => 
     cache: []
   })
 
-  t.is(dummyFs.writeFile.callCount, 0)
+  t.is(dummyFs.updateFileByPragma.callCount, 0)
 
   await vfs.perform()
 
   // should not writeFile using fs.
-  t.is(dummyFs.writeFile.callCount, 0)
+  t.is(dummyFs.updateFileByPragma.callCount, 0)
 
   t.deepEqual(vfs.getState(), {
     pending: [],
@@ -301,14 +301,14 @@ test('perform should not process duplicated task', async (t) => {
     cache: []
   })
 
-  t.is(dummyFs.writeFile.callCount, 0)
+  t.is(dummyFs.updateFileByPragma.callCount, 0)
 
   await vfs.perform()
 
   // should writeFile using fs.
-  t.is(dummyFs.writeFile.callCount, 2)
-  t.is(dummyFs.writeFile.calledWith('hoge.js', `const hoge = 'fuga'`), true)
-  t.is(dummyFs.writeFile.calledWith('hoge.js', `const hoge = 'fuga'`), true)
+  t.is(dummyFs.updateFileByPragma.callCount, 2)
+  t.is(dummyFs.updateFileByPragma.calledWith('hoge.js', `const hoge = 'fuga'`), true)
+  t.is(dummyFs.updateFileByPragma.calledWith('hoge.js', `const hoge = 'fuga'`), true)
 
   t.deepEqual(vfs.getState(), {
     pending: [],
@@ -346,14 +346,14 @@ test('perform should process data change for same file', async (t) => {
     cache: []
   })
 
-  t.is(dummyFs.writeFile.callCount, 0)
+  t.is(dummyFs.updateFileByPragma.callCount, 0)
 
   await vfs.perform()
 
   // should writeFile using fs.
-  t.is(dummyFs.writeFile.callCount, 2)
-  t.is(dummyFs.writeFile.calledWith('hoge.js', `const hoge = 'fuga'`), true)
-  t.is(dummyFs.writeFile.calledWith('hoge.js', `const hoge = 'piyo'`), true)
+  t.is(dummyFs.updateFileByPragma.callCount, 2)
+  t.is(dummyFs.updateFileByPragma.calledWith('hoge.js', `const hoge = 'fuga'`), true)
+  t.is(dummyFs.updateFileByPragma.calledWith('hoge.js', `const hoge = 'piyo'`), true)
 
   t.deepEqual(vfs.getState(), {
     pending: [],
@@ -382,12 +382,12 @@ test.serial('perform should process file update for same file', async (t) => {
     cache: []
   })
 
-  t.is(dummyFs.writeFile.callCount, 0)
+  t.is(dummyFs.updateFileByPragma.callCount, 0)
 
   await vfs.perform()
 
-  t.is(dummyFs.writeFile.callCount, 1)
-  t.is(dummyFs.writeFile.calledWith('hoge.js', `const hoge = 'fuga'`), true)
+  t.is(dummyFs.updateFileByPragma.callCount, 1)
+  t.is(dummyFs.updateFileByPragma.calledWith('hoge.js', `const hoge = 'fuga'`), true)
 
   vfs.writeFile('hoge.js', `const hoge = 'piyo'`)
 
@@ -414,8 +414,8 @@ test.serial('perform should process file update for same file', async (t) => {
   await vfs.perform()
 
   // should updateFile using fs.
-  t.is(dummyFs.writeFile.callCount, 1)
-  t.is(dummyFs.updateFileByPragma.callCount, 1)
+  t.is(dummyFs.updateFileByPragma.callCount, 2)
+  t.is(dummyFs.updateFileByPragma.callCount, 2)
   t.is(dummyFs.updateFileByPragma.calledWith('hoge.js', `const hoge = 'piyo'`), true)
 
   t.deepEqual(vfs.getState(), {
@@ -445,13 +445,13 @@ test.serial('perform should delete extra file on second perform call', async (t)
     cache: []
   })
 
-  t.is(dummyFs.writeFile.callCount, 0)
+  t.is(dummyFs.updateFileByPragma.callCount, 0)
 
   await vfs.perform()
 
   // should writeFile using fs.
-  t.is(dummyFs.writeFile.callCount, 1)
-  t.deepEqual(dummyFs.writeFile.firstCall.args, ['hoge.js', `const hoge = 'fuga'`])
+  t.is(dummyFs.updateFileByPragma.callCount, 1)
+  t.deepEqual(dummyFs.updateFileByPragma.firstCall.args, ['hoge.js', `const hoge = 'fuga'`])
   t.is(dummyFs.remove.callCount, 0)
 
   t.deepEqual(vfs.getState(), {
@@ -469,9 +469,9 @@ test.serial('perform should delete extra file on second perform call', async (t)
 
   await vfs.perform()
 
-  t.is(dummyFs.writeFile.callCount, 2)
-  t.deepEqual(dummyFs.writeFile.firstCall.args, ['hoge.js', `const hoge = 'fuga'`])
-  t.deepEqual(dummyFs.writeFile.secondCall.args, ['fuga.js', `const hoge = 'piyo'`])
+  t.is(dummyFs.updateFileByPragma.callCount, 2)
+  t.deepEqual(dummyFs.updateFileByPragma.firstCall.args, ['hoge.js', `const hoge = 'fuga'`])
+  t.deepEqual(dummyFs.updateFileByPragma.secondCall.args, ['fuga.js', `const hoge = 'piyo'`])
 
   t.is(dummyFs.remove.callCount, 1)
   t.deepEqual(dummyFs.remove.firstCall.args, ['hoge.js'])
@@ -487,9 +487,9 @@ test.serial('perform should delete extra file on second perform call', async (t)
 
   await vfs.perform()
 
-  t.is(dummyFs.writeFile.callCount, 2)
-  t.deepEqual(dummyFs.writeFile.firstCall.args, ['hoge.js', `const hoge = 'fuga'`])
-  t.deepEqual(dummyFs.writeFile.secondCall.args, ['fuga.js', `const hoge = 'piyo'`])
+  t.is(dummyFs.updateFileByPragma.callCount, 2)
+  t.deepEqual(dummyFs.updateFileByPragma.firstCall.args, ['hoge.js', `const hoge = 'fuga'`])
+  t.deepEqual(dummyFs.updateFileByPragma.secondCall.args, ['fuga.js', `const hoge = 'piyo'`])
 
   // should not call for fuga.js(because it's not changed while 2 to 3 time call)
   t.is(dummyFs.remove.callCount, 1)
@@ -522,13 +522,13 @@ test.serial('perform should delete extra empty directory on second perform call'
     cache: []
   })
 
-  t.is(dummyFs.writeFile.callCount, 0)
+  t.is(dummyFs.updateFileByPragma.callCount, 0)
 
   await vfs.perform()
 
   // should writeFile using fs.
-  t.is(dummyFs.writeFile.callCount, 1)
-  t.deepEqual(dummyFs.writeFile.firstCall.args, ['first/hoge.js', `const hoge = 'fuga'`])
+  t.is(dummyFs.updateFileByPragma.callCount, 1)
+  t.deepEqual(dummyFs.updateFileByPragma.firstCall.args, ['first/hoge.js', `const hoge = 'fuga'`])
   t.is(dummyFs.remove.callCount, 0)
 
   t.deepEqual(vfs.getState(), {
@@ -542,9 +542,9 @@ test.serial('perform should delete extra empty directory on second perform call'
 
   await vfs.perform()
 
-  t.is(dummyFs.writeFile.callCount, 2)
-  t.deepEqual(dummyFs.writeFile.firstCall.args, ['first/hoge.js', `const hoge = 'fuga'`])
-  t.deepEqual(dummyFs.writeFile.secondCall.args, ['second/hoge.js', `const hoge = 'piyo'`])
+  t.is(dummyFs.updateFileByPragma.callCount, 2)
+  t.deepEqual(dummyFs.updateFileByPragma.firstCall.args, ['first/hoge.js', `const hoge = 'fuga'`])
+  t.deepEqual(dummyFs.updateFileByPragma.secondCall.args, ['second/hoge.js', `const hoge = 'piyo'`])
 
   t.is(dummyFs.remove.callCount, 2)
   t.deepEqual(dummyFs.remove.firstCall.args, ['first/hoge.js'])
@@ -561,9 +561,9 @@ test.serial('perform should delete extra empty directory on second perform call'
 
   await vfs.perform()
 
-  t.is(dummyFs.writeFile.callCount, 2)
-  t.deepEqual(dummyFs.writeFile.firstCall.args, ['first/hoge.js', `const hoge = 'fuga'`])
-  t.deepEqual(dummyFs.writeFile.secondCall.args, ['second/hoge.js', `const hoge = 'piyo'`])
+  t.is(dummyFs.updateFileByPragma.callCount, 2)
+  t.deepEqual(dummyFs.updateFileByPragma.firstCall.args, ['first/hoge.js', `const hoge = 'fuga'`])
+  t.deepEqual(dummyFs.updateFileByPragma.secondCall.args, ['second/hoge.js', `const hoge = 'piyo'`])
 
   // should not call for fuga.js(because it's not changed while 2 to 3 time call)
   t.is(dummyFs.remove.callCount, 2)
@@ -597,13 +597,13 @@ test.serial('perform should delete extra empty nested directory on second perfor
     cache: []
   })
 
-  t.is(dummyFs.writeFile.callCount, 0)
+  t.is(dummyFs.updateFileByPragma.callCount, 0)
 
   await vfs.perform()
 
   // should writeFile using fs.
-  t.is(dummyFs.writeFile.callCount, 1)
-  t.deepEqual(dummyFs.writeFile.firstCall.args, ['first/nested/hoge.js', `const hoge = 'fuga'`])
+  t.is(dummyFs.updateFileByPragma.callCount, 1)
+  t.deepEqual(dummyFs.updateFileByPragma.firstCall.args, ['first/nested/hoge.js', `const hoge = 'fuga'`])
   t.is(dummyFs.remove.callCount, 0)
 
   t.deepEqual(vfs.getState(), {
@@ -617,9 +617,9 @@ test.serial('perform should delete extra empty nested directory on second perfor
 
   await vfs.perform()
 
-  t.is(dummyFs.writeFile.callCount, 2)
-  t.deepEqual(dummyFs.writeFile.firstCall.args, ['first/nested/hoge.js', `const hoge = 'fuga'`])
-  t.deepEqual(dummyFs.writeFile.secondCall.args, ['first/nested2/fuga.js', `const hoge = 'piyo'`])
+  t.is(dummyFs.updateFileByPragma.callCount, 2)
+  t.deepEqual(dummyFs.updateFileByPragma.firstCall.args, ['first/nested/hoge.js', `const hoge = 'fuga'`])
+  t.deepEqual(dummyFs.updateFileByPragma.secondCall.args, ['first/nested2/fuga.js', `const hoge = 'piyo'`])
 
   t.is(dummyFs.remove.callCount, 2)
   t.deepEqual(dummyFs.remove.firstCall.args, ['first/nested/hoge.js'])
@@ -636,9 +636,9 @@ test.serial('perform should delete extra empty nested directory on second perfor
 
   await vfs.perform()
 
-  t.is(dummyFs.writeFile.callCount, 2)
-  t.deepEqual(dummyFs.writeFile.firstCall.args, ['first/nested/hoge.js', `const hoge = 'fuga'`])
-  t.deepEqual(dummyFs.writeFile.secondCall.args, ['first/nested2/fuga.js', `const hoge = 'piyo'`])
+  t.is(dummyFs.updateFileByPragma.callCount, 2)
+  t.deepEqual(dummyFs.updateFileByPragma.firstCall.args, ['first/nested/hoge.js', `const hoge = 'fuga'`])
+  t.deepEqual(dummyFs.updateFileByPragma.secondCall.args, ['first/nested2/fuga.js', `const hoge = 'piyo'`])
 
   // should not call for fuga.js(because it's not changed while 2 to 3 time call)
   t.is(dummyFs.remove.callCount, 2)
@@ -660,14 +660,14 @@ test.serial('perform should delete empty nested directory even if complex operat
   vfs.writeFile('first/hoge.js', `const hoge = 'piyo'`)
   vfs.writeFile('first/nested/hoge.js', `const hoge = 'fuga'`)
 
-  t.is(dummyFs.writeFile.callCount, 0)
+  t.is(dummyFs.updateFileByPragma.callCount, 0)
 
   await vfs.perform()
 
   // should writeFile using fs.
-  t.is(dummyFs.writeFile.callCount, 2)
-  t.deepEqual(dummyFs.writeFile.firstCall.args, ['first/hoge.js', `const hoge = 'piyo'`])
-  t.deepEqual(dummyFs.writeFile.secondCall.args, ['first/nested/hoge.js', `const hoge = 'fuga'`])
+  t.is(dummyFs.updateFileByPragma.callCount, 2)
+  t.deepEqual(dummyFs.updateFileByPragma.firstCall.args, ['first/hoge.js', `const hoge = 'piyo'`])
+  t.deepEqual(dummyFs.updateFileByPragma.secondCall.args, ['first/nested/hoge.js', `const hoge = 'fuga'`])
   t.is(dummyFs.remove.callCount, 0)
 
   t.deepEqual(vfs.getState(), {
@@ -684,8 +684,8 @@ test.serial('perform should delete empty nested directory even if complex operat
 
   await vfs.perform()
 
-  t.is(dummyFs.writeFile.callCount, 3)
-  t.deepEqual(dummyFs.writeFile.thirdCall.args, ['first/nested/deepNested/hoge.js', `const hoge = 'piyo'`])
+  t.is(dummyFs.updateFileByPragma.callCount, 3)
+  t.deepEqual(dummyFs.updateFileByPragma.thirdCall.args, ['first/nested/deepNested/hoge.js', `const hoge = 'piyo'`])
 
   t.is(dummyFs.remove.callCount, 1)
   t.deepEqual(dummyFs.remove.firstCall.args, ['first/nested/hoge.js'])
@@ -703,9 +703,8 @@ test.serial('perform should delete empty nested directory even if complex operat
 
   await vfs.perform()
 
-  t.is(dummyFs.writeFile.callCount, 4)
-
-  t.deepEqual(dummyFs.writeFile.getCall(3).args, ['first/another/hoge.js', `const hoge = 'piyo'`])
+  t.is(dummyFs.updateFileByPragma.callCount, 4)
+  t.deepEqual(dummyFs.updateFileByPragma.getCall(3).args, ['first/another/hoge.js', `const hoge = 'piyo'`])
 
   // should not call for fuga.js(because it's not changed while 2 to 3 time call)
   t.is(dummyFs.remove.callCount, 4)

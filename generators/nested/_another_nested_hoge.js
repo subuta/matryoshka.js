@@ -1,1 +1,1 @@
-export default 'hoge4'
+export default 'hoge'

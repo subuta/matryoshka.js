@@ -275,3 +275,96 @@ test.serial('should run generator with update', async (t) => {
       └─index.js:[updated]feaf157e94b6f34a6d584069fefe4a2b
   `))
 })
+
+test.serial('should keep old files on error at update', async (t) => {
+  const original = `
+        const hoge = 'fuga'
+        
+        /* EDIT [start] */
+        fuga()
+        /* EDIT [end] */
+        
+        const piyo = 'piyo'
+      `
+
+  const updated = `
+        const fuga = 'hoge'
+        
+        /* EDIT [start] */
+        fuga()
+        /* EDIT [end] */
+        
+        const hoge = 'piyo'
+      `
+
+  const dummyError = new Error('An error occured at generator run')
+
+  const modules = {
+    'test/generators/index.js': sandbox.spy((ctx) => {
+      throw dummyError
+    }),
+  }
+
+  const spiedRequireGlobs = sandbox.stub().returns(Promise.resolve(modules))
+
+  const files = {
+    'test/src/index.js': original
+  }
+
+  const spiedFs = {
+    listFiles: sandbox.spy(() => new Promise(resolve => resolve(_.keys(files)))),
+    writeFile: sandbox.spy(),
+    updateFileByPragma: sandbox.spy(),
+    readFile: sandbox.spy((file) => new Promise((resolve) => resolve(files[file]))),
+    remove: sandbox.spy()
+  }
+
+  const spiedVfs = proxyquire(absolutePath('lib/utils/virtual-fs'), {
+    './fs': spiedFs
+  }).default()
+
+  sandbox.spy(spiedVfs, 'clearCache')
+
+  // pass spied requireGlobs and createVfs mock(with stubbed fs)
+  const createRunner = proxyquire(absolutePath('lib/runner'), {
+    './utils/require': spiedRequireGlobs,
+    './utils/virtual-fs': () => spiedVfs // mock internal vfs.
+  })
+
+  const runner = createRunner({
+    generator: 'test/generators',
+    dest: 'test/src',
+    clean: true
+  })
+
+  t.is(spiedRequireGlobs.callCount, 0)
+  t.is(spiedFs.writeFile.callCount, 0)
+
+  // should call listFiles with dest at createRunner.
+  t.is(spiedFs.listFiles.callCount, 0)
+
+  t.is(spiedVfs.clearCache.callCount, 0)
+  t.is(modules['test/generators/index.js'].callCount, 0)
+
+  await runner.run()
+
+  t.is(spiedFs.listFiles.callCount, 1)
+  t.deepEqual(spiedFs.listFiles.firstCall.args, [['test/src/**/*.js', '!**/_*/**']])
+
+  t.is(spiedRequireGlobs.callCount, 1)
+
+  // should skip writeFile for same content.
+  t.is(spiedFs.remove.callCount, 0)
+  t.is(spiedFs.writeFile.callCount, 0)
+
+  t.deepEqual(spiedRequireGlobs.firstCall.args, [[
+    'test/generators/index.js',
+    'test/generators/nested/hoge.js',
+    'test/generators/nested/index.js'
+  ]])
+  t.is(spiedVfs.clearCache.callCount, 1) // should call clearCache at onError.
+  t.is(modules['test/generators/index.js'].callCount, 1)
+
+  t.is(formatTree(runner.ls(true)), formatTree(`
+  `))
+})

@@ -474,7 +474,7 @@ test.serial('perform should delete extra file on second perform call', async (t)
   t.deepEqual(dummyFs.updateFileByPragma.secondCall.args, ['fuga.js', `const hoge = 'piyo'`])
 
   t.is(dummyFs.remove.callCount, 1)
-  t.deepEqual(dummyFs.remove.firstCall.args, ['hoge.js'])
+  t.deepEqual(dummyFs.remove.firstCall.args, ['hoge.js', false])
 
   t.deepEqual(vfs.getState(), {
     pending: [],
@@ -493,7 +493,7 @@ test.serial('perform should delete extra file on second perform call', async (t)
 
   // should not call for fuga.js(because it's not changed while 2 to 3 time call)
   t.is(dummyFs.remove.callCount, 1)
-  t.deepEqual(dummyFs.remove.firstCall.args, ['hoge.js'])
+  t.deepEqual(dummyFs.remove.firstCall.args, ['hoge.js', false])
 
   t.deepEqual(vfs.getState(), {
     pending: [],
@@ -547,7 +547,7 @@ test.serial('perform should delete extra empty directory on second perform call'
   t.deepEqual(dummyFs.updateFileByPragma.secondCall.args, ['second/hoge.js', `const hoge = 'piyo'`])
 
   t.is(dummyFs.remove.callCount, 2)
-  t.deepEqual(dummyFs.remove.firstCall.args, ['first/hoge.js'])
+  t.deepEqual(dummyFs.remove.firstCall.args, ['first/hoge.js', false])
   t.deepEqual(dummyFs.remove.secondCall.args, ['first', false])
 
   t.deepEqual(vfs.getState(), {
@@ -567,7 +567,7 @@ test.serial('perform should delete extra empty directory on second perform call'
 
   // should not call for fuga.js(because it's not changed while 2 to 3 time call)
   t.is(dummyFs.remove.callCount, 2)
-  t.deepEqual(dummyFs.remove.firstCall.args, ['first/hoge.js'])
+  t.deepEqual(dummyFs.remove.firstCall.args, ['first/hoge.js', false])
   t.deepEqual(dummyFs.remove.secondCall.args, ['first', false])
 
   t.deepEqual(vfs.getState(), {
@@ -622,7 +622,7 @@ test.serial('perform should delete extra empty nested directory on second perfor
   t.deepEqual(dummyFs.updateFileByPragma.secondCall.args, ['first/nested2/fuga.js', `const hoge = 'piyo'`])
 
   t.is(dummyFs.remove.callCount, 2)
-  t.deepEqual(dummyFs.remove.firstCall.args, ['first/nested/hoge.js'])
+  t.deepEqual(dummyFs.remove.firstCall.args, ['first/nested/hoge.js', false])
   t.deepEqual(dummyFs.remove.secondCall.args, ['first/nested', false])
 
   t.deepEqual(vfs.getState(), {
@@ -642,7 +642,7 @@ test.serial('perform should delete extra empty nested directory on second perfor
 
   // should not call for fuga.js(because it's not changed while 2 to 3 time call)
   t.is(dummyFs.remove.callCount, 2)
-  t.deepEqual(dummyFs.remove.firstCall.args, ['first/nested/hoge.js'])
+  t.deepEqual(dummyFs.remove.firstCall.args, ['first/nested/hoge.js', false])
   t.deepEqual(dummyFs.remove.secondCall.args, ['first/nested', false])
 
   t.deepEqual(vfs.getState(), {
@@ -688,7 +688,7 @@ test.serial('perform should delete empty nested directory even if complex operat
   t.deepEqual(dummyFs.updateFileByPragma.thirdCall.args, ['first/nested/deepNested/hoge.js', `const hoge = 'piyo'`])
 
   t.is(dummyFs.remove.callCount, 1)
-  t.deepEqual(dummyFs.remove.firstCall.args, ['first/nested/hoge.js'])
+  t.deepEqual(dummyFs.remove.firstCall.args, ['first/nested/hoge.js', false])
 
   t.deepEqual(vfs.getState(), {
     pending: [],
@@ -708,8 +708,8 @@ test.serial('perform should delete empty nested directory even if complex operat
 
   // should not call for fuga.js(because it's not changed while 2 to 3 time call)
   t.is(dummyFs.remove.callCount, 4)
-  t.deepEqual(dummyFs.remove.secondCall.args, ['first/hoge.js'])
-  t.deepEqual(dummyFs.remove.thirdCall.args, ['first/nested/deepNested/hoge.js'])
+  t.deepEqual(dummyFs.remove.secondCall.args, ['first/hoge.js', false])
+  t.deepEqual(dummyFs.remove.thirdCall.args, ['first/nested/deepNested/hoge.js', false])
   t.deepEqual(dummyFs.remove.getCall(3).args, ['first/nested', false])
 
   t.deepEqual(vfs.getState(), {

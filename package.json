@@ -83,6 +83,7 @@
     "chalk": "^2.3.0",
     "clear-module": "^2.1.0",
     "commander": "^2.12.2",
+    "debug": "^3.1.0",
     "event-stream": "^3.3.4",
     "globby": "^6.1.0",
     "import-fresh": "^2.0.0",
@@ -91,6 +92,7 @@
     "mkdirp": "^0.5.1",
     "rimraf": "^2.6.2",
     "sane": "^2.2.0",
+    "supports-color": "^5.1.0",
     "treeify": "^1.0.1"
   }
 }

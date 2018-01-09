@@ -90,6 +90,7 @@
     "lodash": "^4.17.4",
     "madge": "^2.2.0",
     "mkdirp": "^0.5.1",
+    "multimatch": "^2.1.0",
     "rimraf": "^2.6.2",
     "sane": "^2.2.0",
     "supports-color": "^5.1.0",

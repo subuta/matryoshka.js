@@ -59,6 +59,7 @@
     "mat": "./dist/mat.js"
   },
   "devDependencies": {
+    "anymatch": "^2.0.0",
     "ava": "^0.23.0",
     "babel-cli": "^6.24.1",
     "babel-core": "^6.26.0",
@@ -71,6 +72,7 @@
     "babel-preset-stage-2": "^6.24.1",
     "babel-register": "^6.24.1",
     "backpack-core": "^0.4.3",
+    "minimatch": "^3.0.4",
     "nyc": "^11.3.0",
     "power-assert": "^1.4.4",
     "proxyquire": "^1.8.0",
@@ -79,6 +81,7 @@
     "standard": "^10.0.2"
   },
   "dependencies": {
+    "@subuta/snippets": "^0.3.0",
     "bluebird": "^3.5.1",
     "chalk": "^2.3.0",
     "clear-module": "^2.1.0",

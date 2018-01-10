@@ -60,6 +60,9 @@ and at the end of `vfs.perform` call, we deletes unnecessary files for keep gene
 npm i
 npm run watch # will start generator-watcher
 
+# run bin with your snippets.
+node dist/mat.js -S @subuta/snippets
+
 npm test # will run tests by AVA.
 ```
 

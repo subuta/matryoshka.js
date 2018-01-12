@@ -19,8 +19,9 @@ const testSane = (opts, relativePath) => {
 
   let matched = false
 
+  console.log(relativePath);
   for (let i = 0; i < globs.length; i++) {
-    if (minimatch(relativePath, globs[i]) && !doIgnore(relativePath)) {
+    if (minimatch(relativePath, globs[i], {dot: true}) && !doIgnore(relativePath)) {
       matched = true
       break
     }
@@ -33,7 +34,7 @@ const testSane = (opts, relativePath) => {
 test('matcher tests (for testing glob)', async (t) => {
   const packages = ['@subuta/snippets']
 
-  const matcher = ignore(packages)
+  const matcher = ignore(packages, '/Home/repo/matryoshka.js')
   const opts = {
     ignored: [
       (filename) => {
@@ -45,14 +46,33 @@ test('matcher tests (for testing glob)', async (t) => {
       }
     ],
     glob: [
-      '**/generators/**/*.js', // include whole js.
+      '**/generators/**/*{,.js}', // include whole js.
       ..._.map(packages, p => `**/node_modules/${p}/**`)
     ]
   }
 
-  t.truthy(testSane(opts, 'generators/hoge.js'))
-  t.truthy(testSane(opts, '/Users/subuta/repo/matryoshka.js/generators/hoge.js'))
-  t.falsy(testSane(opts, '/Users/subuta/repo/matryoshka.js/node_modules/hoge.js'))
-  t.truthy(testSane(opts, '/Users/subuta/repo/matryoshka.js/node_modules/@subuta/snippets/hoge.js'))
+  // will ignored
+  t.falsy(testSane(opts, '/Home/repo/matryoshka.js'))
+  t.falsy(testSane(opts, '/Home/repo/matryoshka.js/node_modules'))
+  t.falsy(testSane(opts, '/Home/repo/matryoshka.js/node_modules/hoge.js'))
+  t.falsy(testSane(opts, 'generators'))
+  t.falsy(testSane(opts, 'generators/hoge.js'))
+
+  // ignore directory itself.
+  t.falsy(testSane(opts, '/Home/repo/matryoshka.js/generators'))
+
+  // will watched
+  t.truthy(testSane(opts, '/Home/repo/matryoshka.js/generators/hoge.js'))
+  t.truthy(testSane(opts, '/Home/repo/matryoshka.js/generators/hoge'))
+  t.truthy(testSane(opts, '/Home/repo/matryoshka.js/generators/nested/hoge.js'))
+  t.truthy(testSane(opts, '/Home/repo/matryoshka.js/nested/generators/hoge.js'))
+  t.truthy(testSane(opts, '/Home/repo/matryoshka.js/nested/generators/hoge'))
+  t.truthy(testSane(opts, '/Home/repo/matryoshka.js/nested/generators/nested/hoge.js'))
+  t.truthy(testSane(opts, '/Home/repo/matryoshka.js/nested/generators/nested/hoge'))
+  t.truthy(testSane(opts, '/Home/repo/matryoshka.js/node_modules/@subuta/snippets/hoge.js'))
+  t.truthy(testSane(opts, '/Home/repo/matryoshka.js/node_modules/@subuta/snippets/hoge'))
   t.truthy(testSane(opts, 'node_modules/@subuta/snippets/hoge.js'))
+  t.truthy(testSane(opts, 'node_modules/@subuta/snippets/hoge'))
+  t.truthy(testSane(opts, '/node_modules/@subuta/snippets/hoge.js'))
+  t.truthy(testSane(opts, '/node_modules/@subuta/snippets/hoge'))
 })

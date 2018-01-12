@@ -58,6 +58,11 @@ test('matcher tests (for testing glob)', async (t) => {
   t.falsy(testSane(opts, 'generators'))
   t.falsy(testSane(opts, 'generators/hoge.js'))
 
+  // will also ignore non-json files at target dir.
+  t.falsy(testSane(opts, '/Home/repo/matryoshka.js/generators/hoge.json'))
+  t.falsy(testSane(opts, '/Home/repo/matryoshka.js/node_modules/@subuta/snippets/package.json'))
+  t.falsy(testSane(opts, '/Home/repo/matryoshka.js/node_modules/@subuta/snippets/README.md'))
+
   // ignore directory itself.
   t.falsy(testSane(opts, '/Home/repo/matryoshka.js/generators'))
 

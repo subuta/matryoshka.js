@@ -34,8 +34,17 @@ test('ignore should ignore .git', async (t) => {
 test('ignore should ignore non-js files', async (t) => {
   const matcher = ignore(['snippet*'], '/Home/repo/matryoshka.js')
 
-  t.falsy(matcher(['/Home/repo/matryoshka.js/node_modules/snippets/README.md']))
+  // will ignored
+  t.truthy(matcher(['/Home/repo/matryoshka.js/node_modules/snippets/README.md']))
+  t.truthy(matcher(['/Home/repo/matryoshka.js/node_modules/snippets/package.json']))
+  t.truthy(matcher(['/Home/repo/matryoshka.js/generators/README.md']))
+  t.truthy(matcher(['/Home/repo/matryoshka.js/generators/package.json']))
+
+  // will not ignored
   t.falsy(matcher(['/Home/repo/matryoshka.js/node_modules/snippets']))
+  t.falsy(matcher(['/Home/repo/matryoshka.js/node_modules/snippets/README.js']))
+  t.falsy(matcher(['/Home/repo/matryoshka.js/generators']))
+  t.falsy(matcher(['/Home/repo/matryoshka.js/generators/README.js']))
 })
 
 test('ignore should ignore node_modules except passed packages', async (t) => {
@@ -54,6 +63,7 @@ test('ignore should ignore node_modules except passed packages', async (t) => {
   t.falsy(matcher(['/Home/repo/matryoshka.js/node_modules']))
   t.falsy(matcher(['/Home/repo/matryoshka.js/node_modules/@subuta']))
   t.falsy(matcher(['/Home/repo/matryoshka.js/node_modules/@subuta/snippets']))
+  t.falsy(matcher(['/Home/repo/matryoshka.js/node_modules/@subuta/snippets/redux/Action.js']))
   t.falsy(matcher(['/Home/repo/matryoshka.js/node_modules/@subuta/snippets/redux/Action']))
 })
 
@@ -68,8 +78,10 @@ test('ignore should ignore node_modules except passed packages with glob', async
   t.falsy(matcher(['/Home/repo/matryoshka.js']))
   t.falsy(matcher(['/Home/repo/matryoshka.js/node_modules']))
   t.falsy(matcher(['/Home/repo/matryoshka.js/node_modules/snippets']))
+  t.falsy(matcher(['/Home/repo/matryoshka.js/node_modules/snippets/redux/Action.js']))
   t.falsy(matcher(['/Home/repo/matryoshka.js/node_modules/snippets/redux/Action']))
   t.falsy(matcher(['/Home/repo/matryoshka.js/node_modules/snippet.js']))
+  t.falsy(matcher(['/Home/repo/matryoshka.js/node_modules/snippet.js/redux/Action.js']))
   t.falsy(matcher(['/Home/repo/matryoshka.js/node_modules/snippet.js/redux/Action']))
 })
 

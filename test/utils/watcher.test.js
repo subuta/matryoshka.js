@@ -19,7 +19,6 @@ const testSane = (opts, relativePath) => {
 
   let matched = false
 
-  console.log(relativePath);
   for (let i = 0; i < globs.length; i++) {
     if (minimatch(relativePath, globs[i], {dot: true}) && !doIgnore(relativePath)) {
       matched = true
@@ -46,7 +45,7 @@ test('matcher tests (for testing glob)', async (t) => {
       }
     ],
     glob: [
-      '**/generators/**/*{,.js}', // include whole js.
+      '**/generators{,/**/{!(*.*),*.js}}', // include whole js.
       ..._.map(packages, p => `**/node_modules/${p}/**`)
     ]
   }
@@ -55,16 +54,16 @@ test('matcher tests (for testing glob)', async (t) => {
   t.falsy(testSane(opts, '/Home/repo/matryoshka.js'))
   t.falsy(testSane(opts, '/Home/repo/matryoshka.js/node_modules'))
   t.falsy(testSane(opts, '/Home/repo/matryoshka.js/node_modules/hoge.js'))
-  t.falsy(testSane(opts, 'generators'))
-  t.falsy(testSane(opts, 'generators/hoge.js'))
+  t.truthy(testSane(opts, 'generators'))
+  t.truthy(testSane(opts, 'generators/hoge.js'))
 
-  // will also ignore non-json files at target dir.
+  // will also ignore non-json files at target dir
   t.falsy(testSane(opts, '/Home/repo/matryoshka.js/generators/hoge.json'))
   t.falsy(testSane(opts, '/Home/repo/matryoshka.js/node_modules/@subuta/snippets/package.json'))
   t.falsy(testSane(opts, '/Home/repo/matryoshka.js/node_modules/@subuta/snippets/README.md'))
 
-  // ignore directory itself.
-  t.falsy(testSane(opts, '/Home/repo/matryoshka.js/generators'))
+  // include directory itself.
+  t.truthy(testSane(opts, '/Home/repo/matryoshka.js/generators'))
 
   // will watched
   t.truthy(testSane(opts, '/Home/repo/matryoshka.js/generators/hoge.js'))

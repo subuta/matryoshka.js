@@ -2,3 +2,10 @@ generators
 src
 test
 wallaby.js
+
+# ignore example
+generators
+src
+
+# ignore mat setting for development
+mat.config.js

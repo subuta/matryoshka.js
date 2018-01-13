@@ -1,4 +1,4 @@
-const babel = require('babel-core');
+const babel = require('babel-core')
 const path = require('path')
 
 module.exports = function (wallaby) {
@@ -9,7 +9,9 @@ module.exports = function (wallaby) {
       'test/generators/**/*.js',
       'test/helper.js',
       'test/fixtures/fresh.js',
-      { pattern: 'test/fixtures/generated/**/*.js', instrument: false }
+      'test/fixtures/config/mat.config.js', // load it by wallaby to transpile es6.
+      {pattern: 'test/fixtures/config/**/*', instrument: false},
+      {pattern: 'test/fixtures/generated/**/*.js', instrument: false}
     ],
 
     tests: [
@@ -43,8 +45,8 @@ module.exports = function (wallaby) {
 
     testFramework: 'ava',
 
-    setup: function() {
-      require("babel-register")
+    setup: function () {
+      require('babel-register')
     }
   }
 }

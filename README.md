@@ -40,18 +40,27 @@ and at the end of `vfs.perform` call, we deletes unnecessary files for keep gene
 ```bash
 # mat --help
 
- Usage: mat [options]
+  Usage: mat [options]
 
- Watch your generator files and put generated files to dest on file changes :)
+  watch your generator files and put generated files to dest on file changes :)
 
 
- Options:
+  Options:
 
-   -V, --version            output the version number
-   -d, --dest <value>       destination directory name `default: src`
-   -g, --generator <value>  generator directory name `default: generators`
-   -s, --single-run         single run (no-watch) `default: false`
-   -h, --help               output usage information
+    -V, --version            output the version number
+    -d, --dest <value>       destination directory name `default: src`
+    -g, --generator <value>  generator directory name `default: generators`
+    -c, --clean <value>      force clean destination directory at first run `default: false`
+    -S, --snippets <value>   the snippets to watch and transpile `default: []`
+    -s, --single-run         single run (no-watch) `default: false`
+    -r, --root <value>       path of root `default: process.cwd()`
+    -k, --keep-console       not clear console at each run `default: false`
+    -D, --debug              show debug message `default: false`
+    -h, --help               output usage information
+```
+
+```bash
+mat -D -S @subuta/snippets -r /Users/xxx/repositories
 ```
 
 ### How to develop

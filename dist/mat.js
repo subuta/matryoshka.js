@@ -13,6 +13,7 @@ program
   .option('-c, --clean <value>', 'force clean destination directory at first run `default: false`')
   .option('-S, --snippets <value>', 'the snippets to watch and transpile `default: []`')
   .option('-s, --single-run', 'single run (no-watch) `default: false`')
+  .option('-r, --root <value>', 'path of root `default: process.cwd()`')
   .option('-k, --keep-console', 'not clear console at each run `default: false`')
   .option('-D, --debug', 'show debug message `default: false`')
 
@@ -22,6 +23,7 @@ const dest = program.dest
 const generator = program.generator
 const singleRun = program.singleRun
 const snippets = program.snippets
+const root = program.root
 const keepConsole = program.keepConsole
 const clean = program.clean
 const debug = program.debug
@@ -31,6 +33,7 @@ require('./main.js').default({
   generator,
   singleRun,
   snippets,
+  root,
   keepConsole,
   clean,
   debug

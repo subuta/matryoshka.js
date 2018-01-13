@@ -78,3 +78,26 @@ test('parse dependencies of module with circular', async (t) => {
     'nested/example.js'
   ])
 })
+
+test('parse dependencies of module with includeNpm', async (t) => {
+  const dependencies = {
+    '_helper.js': [],
+    'example.js': [
+      '../node_modules/@subuta/snippets/redux/Action.js',
+      '_helper.js'
+    ],
+    'nested/_another_nested_hoge.js': [],
+    'nested/_hoge.js': ['nested/_nested_hoge.js'],
+    'nested/_nested_hoge.js': ['nested/_another_nested_hoge.js'],
+    'nested/example.js': [
+      '../node_modules/bluebird/js/release/bluebird.js',
+      '../node_modules/lodash/lodash.js',
+      'nested/_hoge.js'
+    ]
+  }
+
+  t.deepEqual(parseDependencies(dependencies, '../node_modules/@subuta/snippets/redux/Action.js'), [
+    '../node_modules/@subuta/snippets/redux/Action.js',
+    'example.js'
+  ])
+})

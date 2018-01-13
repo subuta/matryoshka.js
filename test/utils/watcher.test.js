@@ -2,15 +2,32 @@ import test from 'ava'
 import _ from 'lodash'
 import minimatch from 'minimatch'
 import anymatch from 'anymatch'
-import {
-  ignore
-} from 'lib/utils/match'
-import { debug } from '../../lib/utils/log'
+import { debug } from 'lib/utils/log'
+import { absolutePath } from 'lib/utils/path'
+import sinon from 'sinon'
+import { calculatePathDiff } from '../../lib/utils/path'
+
+const proxyquire = require('proxyquire').noCallThru()
+const sandbox = sinon.sandbox.create()
+
+const cwd = '/Home/repo/matryoshka.js'
 
 test.beforeEach((t) => {
+  const process = {
+    cwd: sandbox.spy(() => cwd)
+  }
+  const ignore = proxyquire(absolutePath('lib/utils/match'), {
+    process
+  }).ignore
+
+  t.context = {
+    ignore,
+    process
+  }
 })
 
 test.afterEach((t) => {
+  sandbox.reset()
 })
 
 const testSane = (opts, relativePath) => {
@@ -31,9 +48,17 @@ const testSane = (opts, relativePath) => {
 
 // https://github.com/amasad/sane/blob/master/src/common.js#L56
 test('matcher tests (for testing glob)', async (t) => {
-  const packages = ['@subuta/snippets']
+  const {ignore, process} = t.context
 
-  const matcher = ignore(packages, '/Home/repo/matryoshka.js')
+  const packages = ['@subuta/snippets']
+  const basePath = '/Home/repo'
+
+  let cwd = process.cwd()
+  if (calculatePathDiff(process.cwd(), basePath)) {
+    cwd = calculatePathDiff(process.cwd(), basePath)
+  }
+
+  const matcher = ignore(packages, basePath)
   const opts = {
     ignored: [
       (filename) => {
@@ -45,38 +70,46 @@ test('matcher tests (for testing glob)', async (t) => {
       }
     ],
     glob: [
+      cwd,
       '**/generators{,/**/{!(*.*),*.js}}', // include whole js.
-      ..._.map(packages, p => `**/node_modules/${p}/**`)
+      ..._.map(packages, p => `**/${p}{,/**/*}`)
     ]
   }
 
-  // will ignored
-  t.falsy(testSane(opts, '/Home/repo/matryoshka.js'))
-  t.falsy(testSane(opts, '/Home/repo/matryoshka.js/node_modules'))
-  t.falsy(testSane(opts, '/Home/repo/matryoshka.js/node_modules/hoge.js'))
-  t.truthy(testSane(opts, 'generators'))
-  t.truthy(testSane(opts, 'generators/hoge.js'))
+  // will ignored =========
+  t.falsy(testSane(opts, `${cwd}/node_modules`))
+  t.falsy(testSane(opts, `${cwd}/node_modules/hoge.js`))
 
   // will also ignore non-json files at target dir
-  t.falsy(testSane(opts, '/Home/repo/matryoshka.js/generators/hoge.json'))
-  t.falsy(testSane(opts, '/Home/repo/matryoshka.js/node_modules/@subuta/snippets/package.json'))
-  t.falsy(testSane(opts, '/Home/repo/matryoshka.js/node_modules/@subuta/snippets/README.md'))
+  t.falsy(testSane(opts, `${cwd}/generators/hoge.json`))
+  t.falsy(testSane(opts, `${cwd}/node_modules/@subuta/snippets/package.json`))
+  t.falsy(testSane(opts, `${cwd}/node_modules/@subuta/snippets/README.md`))
 
-  // include directory itself.
-  t.truthy(testSane(opts, '/Home/repo/matryoshka.js/generators'))
+  // non node_modules (linked modules)
+  t.falsy(testSane(opts, '/Home/repo/@subuta/snippets/redux/README.md'))
 
-  // will watched
-  t.truthy(testSane(opts, '/Home/repo/matryoshka.js/generators/hoge.js'))
-  t.truthy(testSane(opts, '/Home/repo/matryoshka.js/generators/hoge'))
-  t.truthy(testSane(opts, '/Home/repo/matryoshka.js/generators/nested/hoge.js'))
-  t.truthy(testSane(opts, '/Home/repo/matryoshka.js/nested/generators/hoge.js'))
-  t.truthy(testSane(opts, '/Home/repo/matryoshka.js/nested/generators/hoge'))
-  t.truthy(testSane(opts, '/Home/repo/matryoshka.js/nested/generators/nested/hoge.js'))
-  t.truthy(testSane(opts, '/Home/repo/matryoshka.js/nested/generators/nested/hoge'))
-  t.truthy(testSane(opts, '/Home/repo/matryoshka.js/node_modules/@subuta/snippets/hoge.js'))
-  t.truthy(testSane(opts, '/Home/repo/matryoshka.js/node_modules/@subuta/snippets/hoge'))
+  // will watched =========
+  t.truthy(testSane(opts, 'generators'))
+  t.truthy(testSane(opts, 'generators/hoge.js'))
+  t.truthy(testSane(opts, `${cwd}`))
+  t.truthy(testSane(opts, `${cwd}/generators`))
+  t.truthy(testSane(opts, `${cwd}/generators/hoge`))
+  t.truthy(testSane(opts, `${cwd}/generators/hoge.js`))
+  t.truthy(testSane(opts, `${cwd}/generators/nested/hoge.js`))
+  t.truthy(testSane(opts, `${cwd}/nested/generators/hoge.js`))
+  t.truthy(testSane(opts, `${cwd}/nested/generators/hoge`))
+  t.truthy(testSane(opts, `${cwd}/nested/generators/nested/hoge.js`))
+  t.truthy(testSane(opts, `${cwd}/nested/generators/nested/hoge`))
+  t.truthy(testSane(opts, `${cwd}/node_modules/@subuta/snippets/hoge.js`))
+  t.truthy(testSane(opts, `${cwd}/node_modules/@subuta/snippets/hoge`))
   t.truthy(testSane(opts, 'node_modules/@subuta/snippets/hoge.js'))
   t.truthy(testSane(opts, 'node_modules/@subuta/snippets/hoge'))
   t.truthy(testSane(opts, '/node_modules/@subuta/snippets/hoge.js'))
   t.truthy(testSane(opts, '/node_modules/@subuta/snippets/hoge'))
+
+  // include directory itself.
+  t.truthy(testSane(opts, `${cwd}/generators`))
+
+  // non node_modules (linked modules)
+  t.truthy(testSane(opts, '/Home/repo/@subuta/snippets/redux/Action.js'))
 })

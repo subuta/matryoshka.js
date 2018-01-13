@@ -2,13 +2,20 @@ import test from 'ava'
 import _ from 'lodash'
 import sinon from 'sinon'
 import path from 'path'
-import { isChildrenOf, calculatePathDiff, mergePaths } from 'lib/utils/virtual-fs'
+import {
+  actionType,
+  actions,
+  getFileHash
+} from 'lib/utils/virtual-fs'
+
+import {
+  isChildrenOf,
+  mergePaths,
+  absolutePath,
+  calculatePathDiff
+} from 'lib/utils/path'
 
 const sandbox = sinon.sandbox.create()
-
-import { actionType, actions, getFileHash } from 'lib/utils/virtual-fs'
-
-import { absolutePath } from 'lib/utils/path'
 
 const proxyquire = require('proxyquire').noCallThru()
 

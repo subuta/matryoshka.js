@@ -63,6 +63,24 @@ and at the end of `vfs.perform` call, we deletes unnecessary files for keep gene
 mat -D -S @subuta/snippets -r /Users/xxx/repositories
 ```
 
+### Tips
+#### Configuration file (`mat.config.js`)
+`mat` will use `mat.config.js` as a configuration if found at working directory.
+All cli options can be set at configuration file.
+See [cosmiconfig](https://github.com/davidtheclark/cosmiconfig) for other configuration file formats(like `.json` / `.yml`, if you want)  
+
+#### File watcher
+`mat` will watch generator files by default, If you want to use `watchman` as a file watcher(instead of default `fs.watch`)
+then You can set `opts.watchman` to `true` to enable watchman support.
+See [sane](https://github.com/amasad/sane) for details.
+
+#### [!EXPERIMENTAL!] Snippets and `npm link`
+When you pass some module name at `opts.snippets` and , 
+`mat` will AUTO-MAGICALLY watch(and even transpile!) these files also.
+You many need to set `opts.root` to resolve module paths.
+
+If `opts.root` not works, you may also try use [wml](https://github.com/wix/wml) instead of `npm link` ;)   
+
 ### How to develop
 
 ```bash

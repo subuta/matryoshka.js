@@ -18,6 +18,9 @@ module.exports = {
   // single run (no-watch) `default: false`
   singleRun: false,
 
+  // enable `watchman` file watcher `default: false`
+  watchman: false,
+
   // path of root `default: process.cwd()`
   root: process.cwd(),
 

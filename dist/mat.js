@@ -15,26 +15,29 @@ program
   .option('-s, --single-run', 'single run (no-watch) `default: false`')
   .option('-r, --root <value>', 'path of root `default: process.cwd()`')
   .option('-k, --keep-console', 'not clear console at each run `default: false`')
+  .option('-W, --watchman', 'enable `watchman` file watcher `default: false`')
   .option('-D, --debug', 'show debug message `default: false`')
 
 program.parse(process.argv)
 
 const dest = program.dest
 const generator = program.generator
-const singleRun = program.singleRun
+const clean = program.clean
 const snippets = program.snippets
+const singleRun = program.singleRun
 const root = program.root
 const keepConsole = program.keepConsole
-const clean = program.clean
+const watchman = program.watchman
 const debug = program.debug
 
 require('./main.js').default({
   dest,
   generator,
-  singleRun,
+  clean,
   snippets,
+  singleRun,
   root,
   keepConsole,
-  clean,
+  watchman,
   debug
 })

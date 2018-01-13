@@ -6,6 +6,7 @@ import { debug } from 'lib/utils/log'
 import { absolutePath } from 'lib/utils/path'
 import sinon from 'sinon'
 import { calculatePathDiff } from '../../lib/utils/path'
+import process from "process"
 
 const proxyquire = require('proxyquire').noCallThru()
 const sandbox = sinon.sandbox.create()
@@ -53,11 +54,6 @@ test('matcher tests (for testing glob)', async (t) => {
   const packages = ['@subuta/snippets']
   const basePath = '/Home/repo'
 
-  let cwd = process.cwd()
-  if (calculatePathDiff(process.cwd(), basePath)) {
-    cwd = calculatePathDiff(process.cwd(), basePath)
-  }
-
   const matcher = ignore(packages, basePath)
   const opts = {
     ignored: [
@@ -69,11 +65,11 @@ test('matcher tests (for testing glob)', async (t) => {
         return false
       }
     ],
-    glob: [
-      cwd,
+    glob: _.compact(_.uniq([
+      process.cwd(),
       '**/generators{,/**/{!(*.*),*.js}}', // include whole js.
-      ..._.map(packages, p => `**/${p}{,/**/*}`)
-    ]
+      ..._.map(packages, p => `**/${p}{,/**/*}`) // then include packages inside node_modules
+    ]))
   }
 
   // will ignored =========

@@ -81,6 +81,10 @@ You many need to set `opts.root` to resolve module paths.
 
 If `opts.root` not works, you may also try use [wml](https://github.com/wix/wml) instead of `npm link` ;)   
 
+### Recipe
+
+- For generating files into multiple directories you can set `dest` to `./` and nest your generator code to specific directories.  
+
 ### How to develop
 
 ```bash
